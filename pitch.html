@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FoiEmbora — Pitch</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--card:#18181c;--border:rgba(255,255,255,0.08);
+  --text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;
+  --grad:linear-gradient(135deg,#833ab4 0%,#fd1d1d 50%,#fcb045 100%);
+  --purple:#a855f7;--pink:#ec4899;--orange:#f97316;--green:#22c55e;
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+
+/* SLIDES CONTAINER */
+.deck{width:100%;height:100vh;position:relative}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:3rem 4rem;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s ease,transform 0.4s ease;
+  transform:translateX(40px);
+  overflow:hidden;
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.prev{opacity:0;transform:translateX(-40px)}
+
+/* NAVIGATION */
+.nav{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:1rem;z-index:100;
+}
+.nav-dots{display:flex;gap:6px}
+.dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  cursor:pointer;transition:all 0.2s;
+}
+.dot.active{width:22px;border-radius:3px;background:linear-gradient(90deg,#833ab4,#fd1d1d)}
+.nav-btn{
+  background:rgba(255,255,255,0.07);border:1px solid var(--border);
+  color:var(--text);width:36px;height:36px;border-radius:50%;
+  cursor:pointer;font-size:1rem;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-btn:hover{background:rgba(255,255,255,0.12)}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed}
+.slide-counter{font-size:0.75rem;color:var(--dim);min-width:40px;text-align:center}
+
+/* LOGO MARK */
+.logomark{
+  display:inline-flex;align-items:center;gap:8px;
+  font-weight:800;font-size:1rem;color:rgba(255,255,255,0.5);
+  position:fixed;top:1.5rem;left:2rem;z-index:100;
+}
+.logomark .dot-logo{
+  width:28px;height:28px;border-radius:7px;
+  background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:0.9rem;
+}
+
+/* GRADIENT TEXT */
+.grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* COMMON */
+.tag{
+  display:inline-block;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.3rem 0.8rem;border-radius:999px;margin-bottom:1rem;
+}
+.tag-purple{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)}
+.tag-green{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25)}
+.tag-orange{background:rgba(249,115,22,0.12);color:var(--orange);border:1px solid rgba(249,115,22,0.25)}
+
+h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-0.03em;text-align:center}
+h2{font-size:clamp(1.8rem,3.5vw,3rem);font-weight:900;line-height:1.15;letter-spacing:-0.03em}
+.sub{font-size:1.1rem;color:var(--muted);line-height:1.7;max-width:600px;text-align:center}
+
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:1.5rem;
+}
+.card-purple{border-color:rgba(168,85,247,0.25);background:rgba(131,58,180,0.08)}
+.card-green{border-color:rgba(34,197,94,0.2);background:rgba(34,197,94,0.05)}
+.card-orange{border-color:rgba(249,115,22,0.2);background:rgba(249,115,22,0.05)}
+
+/* GRID HELPERS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;width:100%;max-width:900px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;width:100%;max-width:960px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;width:100%;max-width:960px}
+
+.big-num{font-size:3rem;font-weight:900;letter-spacing:-0.04em;line-height:1}
+.lbl{font-size:0.8rem;color:var(--muted);margin-top:0.25rem}
+
+/* BG GLOW */
+.glow{
+  position:absolute;border-radius:50%;pointer-events:none;
+  filter:blur(80px);opacity:0.12;
+}
+
+/* ───────── SLIDE 1 — COVER ───────── */
+#s1 .glow1{width:600px;height:600px;background:#833ab4;top:-200px;left:-100px}
+#s1 .glow2{width:500px;height:500px;background:#fcb045;bottom:-200px;right:-100px}
+#s1 .eyebrow{font-size:0.85rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem}
+#s1 .hero-sub{margin-top:1.25rem}
+#s1 .badges{display:flex;gap:0.75rem;margin-top:2rem;flex-wrap:wrap;justify-content:center}
+#s1 .badge{
+  background:rgba(255,255,255,0.06);border:1px solid var(--border);
+  padding:0.4rem 1rem;border-radius:999px;font-size:0.8rem;color:var(--muted);
+}
+
+/* ───────── SLIDE 2 — PROBLEMA ───────── */
+#s2 .pain-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;width:100%;max-width:860px;margin-top:2.5rem}
+#s2 .pain-card{background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:16px;padding:1.5rem}
+#s2 .pain-icon{font-size:2rem;margin-bottom:0.75rem}
+#s2 .pain-title{font-size:1rem;font-weight:700;margin-bottom:0.4rem}
+#s2 .pain-desc{font-size:0.875rem;color:var(--muted);line-height:1.6}
+#s2 .stat-big{
+  background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);
+  border-radius:16px;padding:1.5rem 2rem;text-align:center;
+  margin-bottom:2rem;
+}
+#s2 .stat-big .num{font-size:3.5rem;font-weight:900;color:#f87171;letter-spacing:-0.04em}
+#s2 .stat-big .desc{font-size:0.95rem;color:var(--muted);margin-top:0.25rem}
+
+/* ───────── SLIDE 3 — SOLUÇÃO ───────── */
+#s3 .solution-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;width:100%;max-width:900px;align-items:center}
+#s3 .mockup{
+  background:var(--card);border:1px solid rgba(168,85,247,0.3);border-radius:20px;
+  padding:1.5rem;position:relative;overflow:hidden;
+}
+#s3 .mockup::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(168,85,247,0.15);filter:blur(40px);
+}
+#s3 .mock-title{font-size:0.7rem;font-weight:700;color:var(--purple);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1rem}
+#s3 .mock-row{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:10px;padding:10px;margin-bottom:8px;
+}
+#s3 .mock-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#833ab4,#fd1d1d)}
+#s3 .mock-name{font-size:0.8rem;font-weight:600}
+#s3 .mock-sub{font-size:0.7rem;color:var(--dim)}
+#s3 .mock-badge{margin-left:auto;font-size:0.65rem;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25);padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap}
+#s3 .sol-points{display:flex;flex-direction:column;gap:1rem}
+#s3 .sol-point{display:flex;gap:12px;align-items:flex-start}
+#s3 .sol-icon{width:36px;height:36px;border-radius:10px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+#s3 .sol-title{font-size:0.95rem;font-weight:700;margin-bottom:0.2rem}
+#s3 .sol-desc{font-size:0.825rem;color:var(--muted);line-height:1.55}
+
+/* ───────── SLIDE 4 — MERCADO ───────── */
+#s4 .market-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;width:100%;max-width:860px;margin:2rem 0}
+#s4 .market-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center}
+#s4 .market-card .num{font-size:2.5rem;font-weight:900;letter-spacing:-0.04em}
+#s4 .market-card .lbl{font-size:0.8rem;color:var(--muted);margin-top:0.25rem;line-height:1.4}
+#s4 .bar-section{width:100%;max-width:860px}
+#s4 .bar-title{font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.06em}
+#s4 .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#s4 .bar-label{font-size:0.8rem;width:120px;text-align:right;color:var(--muted)}
+#s4 .bar-track{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden}
+#s4 .bar-fill{height:100%;border-radius:999px;background:var(--grad)}
+#s4 .bar-val{font-size:0.8rem;font-weight:700;width:60px}
+
+/* ───────── SLIDE 5 — MODELO ───────── */
+#s5 .model-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;width:100%;max-width:860px;margin-top:2rem}
+#s5 .plan-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.75rem}
+#s5 .plan-box.highlight{border-color:rgba(168,85,247,0.4);background:linear-gradient(180deg,rgba(131,58,180,0.1),var(--card))}
+#s5 .plan-label{font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem}
+#s5 .plan-price{font-size:3rem;font-weight:900;letter-spacing:-0.04em;line-height:1;margin-bottom:0.25rem}
+#s5 .plan-price span{font-size:1.25rem;font-weight:600;vertical-align:super}
+#s5 .plan-period{font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem}
+#s5 .plan-features{list-style:none;display:flex;flex-direction:column;gap:0.5rem}
+#s5 .plan-features li{font-size:0.85rem;display:flex;gap:8px;align-items:center}
+#s5 .plan-features li .ck{color:var(--green)}
+#s5 .revenue-row{display:flex;gap:1.25rem;width:100%;max-width:860px;margin-top:1.25rem}
+#s5 .rev-card{flex:1;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:1.25rem;text-align:center}
+#s5 .rev-card .num{font-size:1.75rem;font-weight:900;color:var(--green);letter-spacing:-0.03em}
+#s5 .rev-card .lbl{font-size:0.75rem;color:var(--muted);margin-top:0.2rem}
+
+/* ───────── SLIDE 6 — SEGURANÇA ───────── */
+#s6 .sec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;width:100%;max-width:860px;margin-top:2rem}
+#s6 .sec-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;gap:1rem;align-items:flex-start}
+#s6 .sec-icon{font-size:1.75rem;flex-shrink:0}
+#s6 .sec-title{font-size:0.95rem;font-weight:700;margin-bottom:0.3rem}
+#s6 .sec-desc{font-size:0.825rem;color:var(--muted);line-height:1.55}
+#s6 .vs-row{display:flex;gap:1.25rem;width:100%;max-width:860px;margin-top:1.25rem}
+#s6 .vs-card{flex:1;border-radius:12px;padding:1rem 1.25rem}
+#s6 .vs-bad{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)}
+#s6 .vs-good{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2)}
+#s6 .vs-label{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem}
+#s6 .vs-bad .vs-label{color:#f87171}
+#s6 .vs-good .vs-label{color:var(--green)}
+#s6 .vs-item{font-size:0.8rem;color:var(--muted);display:flex;gap:6px;margin-bottom:4px}
+
+/* ───────── SLIDE 7 — PROJEÇÃO ───────── */
+#s7 .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;width:100%;max-width:860px;margin:2rem 0}
+#s7 .proj-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center}
+#s7 .proj-card.best{border-color:rgba(168,85,247,0.35);background:rgba(131,58,180,0.08)}
+#s7 .proj-scenario{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem}
+#s7 .proj-rev{font-size:2rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:0.25rem}
+#s7 .proj-sub{font-size:0.75rem;color:var(--dim)}
+#s7 .proj-detail{display:flex;flex-direction:column;gap:4px;margin-top:1rem}
+#s7 .proj-line{font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between}
+#s7 .chart-area{width:100%;max-width:860px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem}
+#s7 .chart-bars{display:flex;align-items:flex-end;gap:12px;height:100px;margin-top:0.75rem}
+#s7 .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+#s7 .chart-bar{width:100%;border-radius:6px 6px 0 0;background:var(--grad);transition:height 0.5s ease}
+#s7 .chart-bar-lbl{font-size:0.7rem;color:var(--dim)}
+#s7 .chart-bar-val{font-size:0.75rem;font-weight:700}
+
+/* ───────── SLIDE 8 — ROADMAP ───────── */
+#s8 .road-list{display:flex;flex-direction:column;gap:1rem;width:100%;max-width:800px;margin-top:2rem}
+#s8 .road-item{display:grid;grid-template-columns:110px 1fr;gap:1.25rem;align-items:start}
+#s8 .road-phase{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:0.5rem 0.75rem;text-align:center;
+}
+#s8 .road-phase .ph-label{font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+#s8 .road-phase .ph-time{font-size:0.8rem;font-weight:700;margin-top:0.15rem}
+#s8 .road-content{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem}
+#s8 .road-title{font-size:0.9rem;font-weight:700;margin-bottom:0.35rem}
+#s8 .road-items{display:flex;flex-wrap:wrap;gap:6px}
+#s8 .road-chip{font-size:0.7rem;padding:2px 8px;border-radius:999px;font-weight:600}
+.chip-done{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25)}
+.chip-next{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)}
+.chip-future{background:rgba(249,115,22,0.12);color:var(--orange);border:1px solid rgba(249,115,22,0.25)}
+
+/* ───────── SLIDE 9 — CTA ───────── */
+#s9 .glow1{width:700px;height:700px;background:#833ab4;top:-300px;right:-200px}
+#s9 .glow2{width:500px;height:500px;background:#fcb045;bottom:-250px;left:-150px}
+#s9 .cta-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;width:100%;max-width:800px;margin:2rem 0}
+#s9 .cta-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:1.25rem;text-align:center}
+#s9 .cta-icon{font-size:1.75rem;margin-bottom:0.5rem}
+#s9 .cta-title{font-size:0.85rem;font-weight:700;margin-bottom:0.25rem}
+#s9 .cta-desc{font-size:0.75rem;color:var(--muted);line-height:1.5}
+#s9 .contact{margin-top:1rem;font-size:1rem;color:var(--muted)}
+#s9 .contact strong{color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="logomark"><div class="dot-logo">🔍</div> FoiEmbora</div>
+
+<div class="deck">
+
+  <!-- ━━━━━ SLIDE 1 — COVER ━━━━━ -->
+  <div class="slide active" id="s1">
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+    <div class="eyebrow">Apresentação do produto · 2026</div>
+    <h1>Descubra quem não te<br/>segue de volta no <span class="grad">Instagram</span></h1>
+    <p class="sub hero-sub">Uma ferramenta simples, segura e lucrativa para o maior nicho de ansiedade das redes sociais.</p>
+    <div class="badges">
+      <div class="badge">🔒 Sem senha</div>
+      <div class="badge">⚡ Sem risco de ban</div>
+      <div class="badge">🇧🇷 Mercado brasileiro</div>
+      <div class="badge">💰 Modelo validado globalmente</div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 2 — PROBLEMA ━━━━━ -->
+  <div class="slide" id="s2">
+    <div class="tag tag-purple">O Problema</div>
+    <h2 style="text-align:center;margin-bottom:0.5rem">Todo mundo quer saber.<br/><span class="grad">Quase ninguém consegue com segurança.</span></h2>
+    <p class="sub" style="margin-bottom:0">As soluções disponíveis pedem senha, instalam vírus ou causam banimento de conta.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">🔑</div>
+        <div class="pain-title">Pedem sua senha</div>
+        <div class="pain-desc">Apps e sites concorrentes exigem login completo — expondo a conta a roubo e sequestro.</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🚫</div>
+        <div class="pain-title">Causam banimento</div>
+        <div class="pain-desc">Ferramentas que acessam a API do Instagram via servidor são detectadas e bloqueiam a conta.</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📉</div>
+        <div class="pain-title">Dados desatualizados</div>
+        <div class="pain-desc">Apps móveis perdem acesso constantemente com as atualizações do Instagram.</div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">💸</div>
+        <div class="pain-title">Cobram caro demais</div>
+        <div class="pain-desc">Concorrentes internacionais cobram em dólar, sem suporte local e sem PIX.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 3 — SOLUÇÃO ━━━━━ -->
+  <div class="slide" id="s3">
+    <div class="tag tag-green">A Solução</div>
+    <h2 style="text-align:center;margin-bottom:2rem">FoiEmbora — <span class="grad">seguro por design</span></h2>
+    <div class="solution-grid">
+      <div class="mockup">
+        <div class="mock-title">🔍 Resultado — quem não te segue</div>
+        <div class="mock-row"><div class="mock-avatar"></div><div><div class="mock-name">@usuario_exemplo</div><div class="mock-sub">Nome Completo</div></div><div class="mock-badge">Não segue</div></div>
+        <div class="mock-row"><div class="mock-avatar" style="background:linear-gradient(135deg,#fd1d1d,#fcb045)"></div><div><div class="mock-name">@outro_perfil</div><div class="mock-sub">Perfil Privado</div></div><div class="mock-badge">Não segue</div></div>
+        <div class="mock-row"><div class="mock-avatar" style="background:linear-gradient(135deg,#22c55e,#a855f7)"></div><div><div class="mock-name">@mais_um</div><div class="mock-sub">Verificado ✓</div></div><div class="mock-badge">Não segue</div></div>
+        <div style="margin-top:12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div><div style="font-size:1.25rem;font-weight:800;color:#a855f7">347</div><div style="font-size:0.65rem;color:#71717a">Seguindo</div></div>
+          <div><div style="font-size:1.25rem;font-weight:800;color:#a855f7">289</div><div style="font-size:0.65rem;color:#71717a">Seguidores</div></div>
+          <div><div style="font-size:1.25rem;font-weight:800;color:#f87171">58</div><div style="font-size:0.65rem;color:#71717a">Não seguem</div></div>
+        </div>
+      </div>
+      <div class="sol-points">
+        <div class="sol-point"><div class="sol-icon">🌐</div><div><div class="sol-title">Roda no seu navegador</div><div class="sol-desc">Extensão Chrome gratuita. Usa sua sessão já aberta — nenhum servidor toca no Instagram.</div></div></div>
+        <div class="sol-point"><div class="sol-icon">🔒</div><div><div class="sol-title">Zero senha, zero risco</div><div class="sol-desc">Nunca pedimos credenciais. Somente leitura passiva — Instagram não detecta.</div></div></div>
+        <div class="sol-point"><div class="sol-icon">💳</div><div><div class="sol-title">Pagamento brasileiro</div><div class="sol-desc">PIX instantâneo ou cartão. Avulso por R$5 ou plano trimestral R$24,90.</div></div></div>
+        <div class="sol-point"><div class="sol-icon">📊</div><div><div class="sol-title">Dashboard completo</div><div class="sol-desc">Site profissional com histórico, ghost followers e alertas semanais.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 4 — MERCADO ━━━━━ -->
+  <div class="slide" id="s4">
+    <div class="tag tag-purple">Mercado</div>
+    <h2 style="text-align:center">Um mercado <span class="grad">enorme e mal servido</span></h2>
+    <div class="market-stats">
+      <div class="market-card">
+        <div class="num grad">2B+</div>
+        <div class="lbl">Usuários ativos<br/>no Instagram (global)</div>
+      </div>
+      <div class="market-card">
+        <div class="num grad">120M</div>
+        <div class="lbl">Brasileiros ativos<br/>no Instagram — 3º maior mercado</div>
+      </div>
+      <div class="market-card">
+        <div class="num grad">~60%</div>
+        <div class="lbl">Já buscou saber<br/>quem não te segue de volta</div>
+      </div>
+    </div>
+    <div class="bar-section">
+      <div class="bar-title">Interesse de busca — "quem não me segue instagram" (Brasil)</div>
+      <div class="bar-row"><div class="bar-label">Jan</div><div class="bar-track"><div class="bar-fill" style="width:55%"></div></div><div class="bar-val">55k</div></div>
+      <div class="bar-row"><div class="bar-label">Mar</div><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><div class="bar-val">72k</div></div>
+      <div class="bar-row"><div class="bar-label">Jun</div><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><div class="bar-val">68k</div></div>
+      <div class="bar-row"><div class="bar-label">Set</div><div class="bar-track"><div class="bar-fill" style="width:81%"></div></div><div class="bar-val">81k</div></div>
+      <div class="bar-row"><div class="bar-label">Dez</div><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><div class="bar-val">90k+</div></div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 5 — MODELO DE NEGÓCIO ━━━━━ -->
+  <div class="slide" id="s5">
+    <div class="tag tag-green">Modelo de Negócio</div>
+    <h2 style="text-align:center;margin-bottom:0">Receita <span class="grad">desde o primeiro usuário</span></h2>
+    <div class="model-grid">
+      <div class="plan-box">
+        <div class="plan-label">Avulso</div>
+        <div class="plan-price"><span>R$</span>5</div>
+        <div class="plan-period">por verificação · PIX instantâneo</div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> Lista completa de não-seguidores</li>
+          <li><span class="ck">✓</span> Seguidores mútuos</li>
+          <li><span class="ck">✓</span> Sem cadastro obrigatório</li>
+          <li style="color:var(--dim)">– Ghost followers</li>
+          <li style="color:var(--dim)">– Histórico e alertas</li>
+        </ul>
+      </div>
+      <div class="plan-box highlight">
+        <div class="plan-label">Trimestral · ⭐ Mais popular</div>
+        <div class="plan-price"><span>R$</span>24<span style="font-size:1.25rem">,90</span></div>
+        <div class="plan-period">3 meses · equivale a R$8,30/mês</div>
+        <ul class="plan-features">
+          <li><span class="ck">✓</span> Verificações ilimitadas</li>
+          <li><span class="ck">✓</span> Ghost followers</li>
+          <li><span class="ck">✓</span> Histórico 3 meses</li>
+          <li><span class="ck">✓</span> Alertas semanais por e-mail</li>
+          <li><span class="ck">✓</span> PIX ou cartão de crédito</li>
+        </ul>
+      </div>
+    </div>
+    <div class="revenue-row">
+      <div class="rev-card"><div class="num">R$0,10</div><div class="lbl">Custo por usuário<br/>(extensão gratuita)</div></div>
+      <div class="rev-card"><div class="num">~85%</div><div class="lbl">Margem bruta<br/>(SaaS digital)</div></div>
+      <div class="rev-card"><div class="num">R$5</div><div class="lbl">Ticket mínimo<br/>(avulso · PIX)</div></div>
+      <div class="rev-card"><div class="num">R$8,30</div><div class="lbl">Ticket médio/mês<br/>(plano trimestral)</div></div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 6 — SEGURANÇA TÉCNICA ━━━━━ -->
+  <div class="slide" id="s6">
+    <div class="tag tag-green">Diferencial Técnico</div>
+    <h2 style="text-align:center;margin-bottom:0">Por que <span class="grad">não causa banimento</span></h2>
+    <div class="sec-grid">
+      <div class="sec-card"><div class="sec-icon">🏠</div><div><div class="sec-title">IP residencial do usuário</div><div class="sec-desc">Todos os requests saem do computador do usuário — não de servidores nossos. Instagram vê um acesso normal.</div></div></div>
+      <div class="sec-card"><div class="sec-icon">🔬</div><div><div class="sec-title">TLS fingerprint real</div><div class="sec-desc">Extensão roda no Chrome real — fingerprint idêntico ao de um usuário humano navegando normalmente.</div></div></div>
+      <div class="sec-card"><div class="sec-icon">👁️</div><div><div class="sec-title">Somente leitura</div><div class="sec-desc">Nenhuma ação automatizada. Não segue, não deixa de seguir, não curte — só lê dados que já aparecem na tela.</div></div></div>
+      <div class="sec-card"><div class="sec-icon">⏱️</div><div><div class="sec-title">Velocidade humana</div><div class="sec-desc">Intervalo de 600ms entre requisições — padrão de um humano navegando. Abaixo do threshold de detecção.</div></div></div>
+    </div>
+    <div class="vs-row">
+      <div class="vs-card vs-bad">
+        <div class="vs-label">❌ Concorrentes perigosos</div>
+        <div class="vs-item">🔴 IP de datacenter → ban imediato</div>
+        <div class="vs-item">🔴 Pedem senha → risco de sequestro</div>
+        <div class="vs-item">🔴 TLS de Python → flagado pelo Instagram</div>
+      </div>
+      <div class="vs-card vs-good">
+        <div class="vs-label">✅ FoiEmbora</div>
+        <div class="vs-item">🟢 IP do próprio usuário</div>
+        <div class="vs-item">🟢 Nunca pede senha</div>
+        <div class="vs-item">🟢 TLS do Chrome real — invisível</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 7 — PROJEÇÃO ━━━━━ -->
+  <div class="slide" id="s7">
+    <div class="tag tag-orange">Projeção de Receita</div>
+    <h2 style="text-align:center;margin-bottom:0">Escalável <span class="grad">desde o primeiro mês</span></h2>
+    <div class="proj-grid">
+      <div class="proj-card">
+        <div class="proj-scenario">Conservador</div>
+        <div class="proj-rev" style="color:#a1a1aa">R$483<span style="font-size:1rem">/mês</span></div>
+        <div class="proj-sub">início, orgânico</div>
+        <div class="proj-detail">
+          <div class="proj-line"><span>50 avulsos</span><span>R$250</span></div>
+          <div class="proj-line"><span>10 trimestrais</span><span>R$83/mês</span></div>
+        </div>
+      </div>
+      <div class="proj-card best">
+        <div class="proj-scenario">⭐ Moderado</div>
+        <div class="proj-rev grad">R$1.800<span style="font-size:1rem">/mês</span></div>
+        <div class="proj-sub">3-6 meses com SEO + TikTok</div>
+        <div class="proj-detail">
+          <div class="proj-line"><span>150 avulsos</span><span>R$750</span></div>
+          <div class="proj-line"><span>40 trimestrais</span><span>R$333/mês</span></div>
+        </div>
+      </div>
+      <div class="proj-card">
+        <div class="proj-scenario">Otimista</div>
+        <div class="proj-rev" style="color:var(--green)">R$5.200<span style="font-size:1rem">/mês</span></div>
+        <div class="proj-sub">6-12 meses com tração</div>
+        <div class="proj-detail">
+          <div class="proj-line"><span>400 avulsos</span><span>R$2.000</span></div>
+          <div class="proj-line"><span>120 trimestrais</span><span>R$1.000/mês</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-area">
+      <div style="font-size:0.8rem;font-weight:600;color:var(--muted)">Crescimento estimado de receita (R$/mês)</div>
+      <div class="chart-bars">
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$483</div><div class="chart-bar" style="height:12%"></div><div class="chart-bar-lbl">Mês 1</div></div>
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$720</div><div class="chart-bar" style="height:19%"></div><div class="chart-bar-lbl">Mês 2</div></div>
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$1.1k</div><div class="chart-bar" style="height:30%"></div><div class="chart-bar-lbl">Mês 3</div></div>
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$1.8k</div><div class="chart-bar" style="height:46%"></div><div class="chart-bar-lbl">Mês 6</div></div>
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$3.2k</div><div class="chart-bar" style="height:67%"></div><div class="chart-bar-lbl">Mês 9</div></div>
+        <div class="chart-bar-wrap"><div class="chart-bar-val">R$5.2k</div><div class="chart-bar" style="height:100%"></div><div class="chart-bar-lbl">Mês 12</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 8 — ROADMAP ━━━━━ -->
+  <div class="slide" id="s8">
+    <div class="tag tag-purple">Roadmap</div>
+    <h2 style="text-align:center;margin-bottom:0">Do MVP ao <span class="grad">produto completo</span></h2>
+    <div class="road-list">
+      <div class="road-item">
+        <div class="road-phase"><div class="ph-label">Fase 1</div><div class="ph-time" style="color:var(--green)">Agora ✓</div></div>
+        <div class="road-content">
+          <div class="road-title">MVP Lançado</div>
+          <div class="road-items">
+            <span class="road-chip chip-done">Site FoiEmbora</span>
+            <span class="road-chip chip-done">Extensão Chrome</span>
+            <span class="road-chip chip-done">Avulso R$5</span>
+            <span class="road-chip chip-done">Plano Trimestral</span>
+          </div>
+        </div>
+      </div>
+      <div class="road-item">
+        <div class="road-phase"><div class="ph-label">Fase 2</div><div class="ph-time" style="color:var(--purple)">Mês 1–2</div></div>
+        <div class="road-content">
+          <div class="road-title">Pagamentos e Retenção</div>
+          <div class="road-items">
+            <span class="road-chip chip-next">Mercado Pago PIX</span>
+            <span class="road-chip chip-next">Ghost Followers</span>
+            <span class="road-chip chip-next">Histórico</span>
+            <span class="road-chip chip-next">Alertas por e-mail</span>
+          </div>
+        </div>
+      </div>
+      <div class="road-item">
+        <div class="road-phase"><div class="ph-label">Fase 3</div><div class="ph-time" style="color:var(--orange)">Mês 3–6</div></div>
+        <div class="road-content">
+          <div class="road-title">Crescimento e Analytics</div>
+          <div class="road-items">
+            <span class="road-chip chip-future">Engajamento por post</span>
+            <span class="road-chip chip-future">Melhor horário</span>
+            <span class="road-chip chip-future">Relatório PDF</span>
+            <span class="road-chip chip-future">Plano Agência</span>
+          </div>
+        </div>
+      </div>
+      <div class="road-item">
+        <div class="road-phase"><div class="ph-label">Fase 4</div><div class="ph-time" style="color:var(--muted)">6m+</div></div>
+        <div class="road-content">
+          <div class="road-title">Expansão Multi-plataforma</div>
+          <div class="road-items">
+            <span class="road-chip chip-future">TikTok</span>
+            <span class="road-chip chip-future">X (Twitter)</span>
+            <span class="road-chip chip-future">YouTube</span>
+            <span class="road-chip chip-future">API para agências</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━━━ SLIDE 9 — CTA ━━━━━ -->
+  <div class="slide" id="s9">
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+    <div class="tag tag-purple">Oportunidade</div>
+    <h1>Pronto para <span class="grad">começar</span>?</h1>
+    <p class="sub" style="margin-top:1rem">Produto construído. Tecnologia validada. Mercado comprovado. Falta apenas lançar.</p>
+    <div class="cta-cards">
+      <div class="cta-card">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-title">MVP pronto</div>
+        <div class="cta-desc">Site + extensão funcionando hoje. Zero custo de desenvolvimento inicial.</div>
+      </div>
+      <div class="cta-card">
+        <div class="cta-icon">💰</div>
+        <div class="cta-title">Receita imediata</div>
+        <div class="cta-desc">Primeiro R$5 entra no dia do lançamento. Sem dependência de volume.</div>
+      </div>
+      <div class="cta-card">
+        <div class="cta-icon">📈</div>
+        <div class="cta-title">Escala orgânica</div>
+        <div class="cta-desc">SEO + TikTok + viralidade. CAC zero no início.</div>
+      </div>
+    </div>
+    <p class="contact">Contato: <strong>foiembora.com.br</strong> &nbsp;·&nbsp; Feito no Brasil 🇧🇷</p>
+  </div>
+
+</div><!-- end deck -->
+
+<!-- NAVIGATION -->
+<nav class="nav">
+  <button class="nav-btn" id="prev">←</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn" id="next">→</button>
+  <div class="slide-counter" id="counter">1 / 9</div>
+</nav>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsContainer = document.getElementById('dots');
+let current = 0;
+
+// Build dots
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsContainer.appendChild(d);
+});
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  slides[current].classList.add('prev');
+  setTimeout(() => slides[current].classList.remove('prev'), 400);
+
+  current = n;
+  slides[current].classList.add('active');
+
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  document.getElementById('counter').textContent = `${current + 1} / ${slides.length}`;
+  document.getElementById('prev').disabled = current === 0;
+  document.getElementById('next').disabled = current === slides.length - 1;
+}
+
+document.getElementById('prev').onclick = () => current > 0 && goTo(current - 1);
+document.getElementById('next').onclick = () => current < slides.length - 1 && goTo(current + 1);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); if (current < slides.length - 1) goTo(current + 1); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (current > 0) goTo(current - 1); }
+});
+
+// Touch swipe
+let tx = 0;
+document.addEventListener('touchstart', e => tx = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+  const dx = tx - e.changedTouches[0].clientX;
+  if (dx > 50 && current < slides.length - 1) goTo(current + 1);
+  if (dx < -50 && current > 0) goTo(current - 1);
+});
+
+goTo(0);
+</script>
+</body>
+</html>

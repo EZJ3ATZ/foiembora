@@ -1,0 +1,163 @@
+{% extends 'admin/base.html' %}
+{% set is_admin_user = true %}
+{% set active = 'settings' %}
+{% block title %}Configurações{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+
+{% block content %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start">
+
+  <!-- MERCADO PAGO -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">💳 Mercado Pago</div>
+      {% if mp_token_configured %}
+        {% if mp_status == 'ok' %}
+          <span class="badge badge-green">✓ Conectado</span>
+        {% elif mp_status == 'error' %}
+          <span class="badge badge-red">✗ Token inválido</span>
+        {% else %}
+          <span class="badge badge-yellow">Token salvo</span>
+        {% endif %}
+      {% else %}
+        <span class="badge badge-red">Não configurado</span>
+      {% endif %}
+    </div>
+    <div style="padding:1.25rem">
+
+      <!-- INSTRUÇÃO -->
+      <div style="background:rgba(168,85,247,0.07);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.6;color:var(--muted)">
+        <strong style="color:var(--text);display:block;margin-bottom:0.4rem">Como obter sua chave:</strong>
+        1. Acesse <strong>mercadopago.com.br</strong> e faça login<br>
+        2. Vá em <strong>Seu negócio → Credenciais</strong><br>
+        3. Copie o <strong>Access Token de Produção</strong><br>
+        4. Cole abaixo e salve
+      </div>
+
+      <form method="POST">
+        <div style="margin-bottom:1rem">
+          <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem">Access Token de Produção</label>
+          <input
+            type="password"
+            name="mp_token"
+            placeholder="APP_USR-xxxxxxxxxxxx..."
+            value="{{ mp_token_saved }}"
+            style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.85rem;font-family:monospace"
+          >
+          <div style="font-size:0.74rem;color:var(--dim);margin-top:0.3rem">
+            Começa com <code style="color:var(--purple)">APP_USR-</code> (produção) ou <code style="color:var(--muted)">TEST-</code> (teste)
+          </div>
+        </div>
+
+        <div style="margin-bottom:1.25rem">
+          <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem">URL base do site</label>
+          <input
+            type="text"
+            name="base_url"
+            placeholder="https://foiembora.com.br"
+            value="{{ base_url }}"
+            style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.85rem"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%">Salvar configurações</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- WEBHOOK + STATUS -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔗 Webhook PIX</div>
+      </div>
+      <div style="padding:1.25rem">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">
+          Configure essa URL nas notificações do Mercado Pago para receber confirmações automáticas de pagamento.
+        </p>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.75rem;font-size:0.78rem;font-family:monospace;color:var(--purple);word-break:break-all">
+          {{ webhook_url }}
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem;width:100%" onclick="navigator.clipboard.writeText('{{ webhook_url }}').then(()=>alert('Copiado!'))">
+          📋 Copiar URL do webhook
+        </button>
+        <div style="font-size:0.75rem;color:var(--dim);margin-top:0.75rem;line-height:1.5">
+          No painel MP: <strong>Seu negócio → Notificações → URLs de IPN</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Status da integração</div>
+      </div>
+      <div style="padding:1.25rem">
+        <div style="display:flex;flex-direction:column;gap:0.75rem">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:0.85rem;color:var(--muted)">Token configurado</span>
+            {% if mp_token_configured %}
+              <span class="badge badge-green">✓ Sim</span>
+            {% else %}
+              <span class="badge badge-red">✗ Não</span>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:0.85rem;color:var(--muted)">Conexão com MP</span>
+            {% if mp_status == 'ok' %}
+              <span class="badge badge-green">✓ Online</span>
+            {% elif mp_status == 'error' %}
+              <span class="badge badge-red">✗ Falhou</span>
+            {% else %}
+              <span class="badge badge-yellow">— Não testado</span>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:0.85rem;color:var(--muted)">Modo de pagamento</span>
+            {% if mp_token_configured %}
+              <span class="badge badge-purple">PIX Real</span>
+            {% else %}
+              <span class="badge badge-yellow">Demo (simulado)</span>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0">
+            <span style="font-size:0.85rem;color:var(--muted)">Webhook ativo</span>
+            {% if mp_token_configured %}
+              <span class="badge badge-green">✓ Configurado</span>
+            {% else %}
+              <span class="badge badge-red">✗ Inativo</span>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔐 Segurança da conta admin</div>
+      </div>
+      <div style="padding:1.25rem">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">
+          Altere a senha de acesso ao painel administrativo.
+        </p>
+        <form method="POST" action="{{ url_for('admin_change_password') }}">
+          <div style="margin-bottom:0.75rem">
+            <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem">Nova senha</label>
+            <input type="password" name="new_password" placeholder="Mínimo 8 caracteres"
+              style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.85rem">
+          </div>
+          <button type="submit" class="btn btn-outline" style="width:100%">Alterar senha</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

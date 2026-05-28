@@ -1,0 +1,152 @@
+{% extends 'admin/base.html' %}
+{% set is_admin_user = true %}
+{% set active = 'sellers' %}
+{% block title %}Vendedores{% endblock %}
+{% block page_title %}Vendedores{% endblock %}
+
+{% block topbar_actions %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-novo').classList.add('open')">+ Novo vendedor</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Rede de vendedores — {{ sellers|length }} cadastrados</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Vendedor</th>
+          <th>Código</th>
+          <th>Comissão %</th>
+          <th>Total vendas</th>
+          <th>Comissão ganha</th>
+          <th>A receber</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sellers %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ s.name }}</div>
+            <div style="color:var(--dim);font-size:0.75rem">{{ s.email }}</div>
+          </td>
+          <td>
+            <span class="badge badge-purple">{{ s.referral_code }}</span>
+          </td>
+          <td style="font-weight:600">{{ s.commission_rate }}%</td>
+          <td style="font-weight:600">{{ s.total_sales }}</td>
+          <td style="font-weight:700;color:var(--green)">R$ {{ "%.2f"|format(s.total_commission) }}</td>
+          <td style="font-weight:700;color:var(--orange)">R$ {{ "%.2f"|format(s.pending_commission) }}</td>
+          <td>
+            {% if s.is_active %}
+              <span class="badge badge-green">ativo</span>
+            {% else %}
+              <span class="badge badge-red">inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <form method="POST" action="{{ url_for('admin_seller_toggle', sid=s.id) }}" style="display:inline">
+                <button class="btn btn-sm {% if s.is_active %}btn-danger{% else %}btn-outline{% endif %}">
+                  {{ '🔒 Desativar' if s.is_active else '✅ Ativar' }}
+                </button>
+              </form>
+              <button class="btn btn-sm btn-outline" onclick="copyLink('{{ s.referral_code }}')">🔗 Link</button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;color:var(--dim);padding:2.5rem">
+          Nenhum vendedor cadastrado. Clique em "+ Novo vendedor" para começar.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Comissões pendentes -->
+{% set all_commissions = [] %}
+{% for s in sellers %}
+  {% for c in s.commissions %}
+    {% if c.status == 'pending' %}{% set _ = all_commissions.append(c) %}{% endif %}
+  {% endfor %}
+{% endfor %}
+
+{% if all_commissions %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Comissões pendentes de pagamento</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Vendedor</th><th>Valor</th><th>Data</th><th>Ação</th></tr>
+      </thead>
+      <tbody>
+        {% for c in all_commissions %}
+        <tr>
+          <td style="font-weight:600">{{ c.seller.name }}</td>
+          <td style="font-weight:700;color:var(--green)">R$ {{ "%.2f"|format(c.amount) }}</td>
+          <td style="color:var(--dim);font-size:0.75rem">{{ c.created_at.strftime('%d/%m/%Y') if c.created_at else '—' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_commission_pay', cid=c.id) }}">
+              <button class="btn btn-sm btn-primary">✅ Marcar como pago</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- MODAL NOVO VENDEDOR -->
+<div class="modal-overlay" id="modal-novo">
+  <div class="modal">
+    <h2 class="modal-title">Novo vendedor</h2>
+    <p class="modal-sub">O vendedor receberá um link exclusivo de indicação.</p>
+    <form method="POST" action="{{ url_for('admin_seller_create') }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-input" type="text" name="name" placeholder="João Silva" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" name="email" placeholder="joao@email.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha de acesso</label>
+          <input class="form-input" type="password" name="password" placeholder="••••••••" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Comissão (%)</label>
+          <input class="form-input" type="number" name="commission_rate" value="30" min="1" max="80"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="document.getElementById('modal-novo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="flex:2">Criar vendedor →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyLink(code) {
+  const link = `${window.location.origin}/?ref=${code}`;
+  navigator.clipboard.writeText(link).then(() => alert(`Link copiado!\n${link}`));
+}
+document.getElementById('modal-novo').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+</script>
+{% endblock %}

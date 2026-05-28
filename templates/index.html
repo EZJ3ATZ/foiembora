@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoiEmbora — Descubra quem não te segue de volta no Instagram</title>
+  <meta name="description" content="Veja quem não te segue de volta no Instagram em segundos. Sem senha, sem risco de banimento. Por apenas R$5 ou assine o plano trimestral." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #09090b;
+      --bg2: #111115;
+      --card: #18181c;
+      --card-hover: #1f1f25;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.14);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --dim: #71717a;
+      --purple: #a855f7;
+      --pink: #ec4899;
+      --orange: #f97316;
+      --green: #22c55e;
+      --grad: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 800;
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--grad);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.06);
+    }
+
+    .btn-primary {
+      background: var(--grad);
+      border: none;
+      color: #fff;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 1.5rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Aurora background – adaptado do AuroraBackground (UI Library) */
+    @keyframes aurora {
+      0%   { background-position: 50% 50%, 50% 50%; }
+      100% { background-position: 350% 50%, 350% 50%; }
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(100deg,
+          rgba(131,58,180,0) 0%,
+          rgba(131,58,180,0.12) 7%,
+          rgba(253,29,29,0.10) 10%,
+          rgba(252,176,69,0.08) 12%,
+          rgba(168,85,247,0.10) 16%,
+          rgba(131,58,180,0) 19%
+        ),
+        repeating-linear-gradient(100deg,
+          rgba(9,9,11,0) 0%,
+          rgba(131,58,180,0.05) 3%,
+          rgba(253,29,29,0.07) 6%,
+          rgba(252,176,69,0.05) 10%,
+          rgba(9,9,11,0) 16%
+        );
+      background-size: 300% 200%, 200% 100%;
+      animation: aurora 12s linear infinite;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 60%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 60%, transparent 100%);
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(ellipse, rgba(131,58,180,0.15) 0%, rgba(253,29,29,0.08) 40%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.3);
+      color: var(--purple);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.08;
+      max-width: 800px;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .grad-text {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+
+    .btn-hero {
+      background: var(--grad);
+      border: none;
+      color: #fff;
+      padding: 0.875rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 40px rgba(168,85,247,0.3);
+    }
+
+    .btn-hero:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 0 60px rgba(168,85,247,0.5); }
+
+    .btn-hero-outline {
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+      padding: 0.875rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-hero-outline:hover { background: rgba(255,255,255,0.05); }
+
+    .trust-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .trust-item .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION BASE ── */
+    section { padding: 6rem 1.5rem; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.75rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.7;
+    }
+
+    .section-header { margin-bottom: 3.5rem; }
+    .section-header.center { text-align: center; }
+    .section-header.center .section-sub { margin: 0 auto; }
+
+    /* ── STATS ── */
+    .stats-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 1.5rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 2rem;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.03em;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .step-card:hover {
+      border-color: rgba(168,85,247,0.3);
+      background: var(--card-hover);
+    }
+
+    .step-number {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .step-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(168,85,247,0.25);
+      background: var(--card-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .feature-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .tag-free { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+    .tag-semestral { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); }
+    .tag-pro { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.25); }
+
+    /* ── PRICING ── */
+    .pricing-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .plan-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .plan-card.featured {
+      border-color: rgba(168,85,247,0.5);
+      background: linear-gradient(180deg, rgba(131,58,180,0.08) 0%, var(--card) 100%);
+      transform: scale(1.03);
+    }
+
+    .plan-card.featured::before {
+      content: 'MAIS POPULAR';
+      position: absolute;
+      top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--grad);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.85rem;
+      border-radius: 999px;
+    }
+
+    .plan-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .plan-price {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .plan-price span { font-size: 1.25rem; font-weight: 600; vertical-align: super; }
+
+    .plan-period {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .plan-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .plan-features li .check {
+      color: var(--green);
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    .plan-features li .x {
+      color: var(--dim);
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    .plan-features li.disabled { color: var(--dim); }
+
+    .btn-plan {
+      width: 100%;
+      padding: 0.875rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+
+    .btn-plan-primary {
+      background: var(--grad);
+      border: none;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(168,85,247,0.25);
+    }
+
+    .btn-plan-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .btn-plan-outline {
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      color: var(--text);
+    }
+
+    .btn-plan-outline:hover { background: rgba(255,255,255,0.05); }
+
+    .savings-badge {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--green);
+      text-align: center;
+      width: 100%;
+    }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .security-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .security-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .security-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .security-desc {
+      font-size: 0.825rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── FAQ ── */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .faq-question:hover { background: rgba(255,255,255,0.03); }
+
+    .faq-arrow {
+      flex-shrink: 0;
+      transition: transform 0.25s;
+      color: var(--dim);
+    }
+
+    .faq-item.open .faq-arrow { transform: rotate(180deg); }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .faq-item.open .faq-answer { max-height: 300px; }
+
+    .faq-answer-inner {
+      padding: 0 1.5rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    /* ── CTA FINAL ── */
+    .cta-section {
+      text-align: center;
+      padding: 7rem 1.5rem;
+      position: relative;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(131,58,180,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .cta-section p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.5rem;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left { color: var(--dim); font-size: 0.85rem; }
+    .footer-left strong { color: var(--muted); }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      color: var(--dim);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--muted); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border-bright);
+      border-radius: 24px;
+      padding: 2.5rem;
+      max-width: 460px;
+      width: 100%;
+      position: relative;
+      animation: modalIn 0.25s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1.25rem; right: 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--dim);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 1;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .modal-price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(168,85,247,0.08);
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-price-label { font-size: 0.875rem; color: var(--muted); }
+    .modal-price-value { font-size: 1.5rem; font-weight: 800; }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 0.7rem 1rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-input:focus { border-color: rgba(168,85,247,0.5); }
+    .form-input::placeholder { color: var(--dim); }
+
+    .pix-section {
+      background: rgba(34,197,94,0.06);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .pix-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    .pix-title { font-weight: 700; margin-bottom: 0.25rem; font-size: 0.95rem; }
+
+    .pix-desc { color: var(--muted); font-size: 0.8rem; }
+
+    .btn-full {
+      width: 100%;
+      padding: 0.9rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--grad);
+      border: none;
+      color: #fff;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-full:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .modal-fine {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--dim);
+      margin-top: 0.75rem;
+    }
+
+    /* ── INSTALL TABS ── */
+    .install-tab {
+      background: transparent; border: none; color: var(--muted);
+      padding: 0.5rem 1.1rem; border-radius: 8px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .install-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .install-tab.active {
+      background: rgba(168,85,247,0.15); color: var(--purple);
+      border: 1px solid rgba(168,85,247,0.3);
+    }
+    .install-panel { animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 1rem; }
+      .plan-card.featured { transform: none; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-icon">🔍</div>
+    FoiEmbora
+  </a>
+  <div class="nav-links">
+    <a href="#planos" class="btn-ghost">Ver planos</a>
+    <a href="#verificar" class="btn-primary" onclick="openModal()">Verificar agora</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">🔥 Sem senha &nbsp;·&nbsp; Sem risco de banimento</div>
+  <h1>Descubra quem não<br />te segue de volta <span class="grad-text">agora</span></h1>
+  <p>Veja a lista completa de quem você segue mas não te segue de volta no Instagram. Resultado em segundos, de forma 100% segura.</p>
+  <div class="hero-actions">
+    <a href="#verificar" class="btn-hero" onclick="openModal()">Verificar por R$5 →</a>
+    <a href="#como-funciona" class="btn-hero-outline">Como funciona</a>
+  </div>
+  <div class="trust-row">
+    <div class="trust-item"><div class="dot"></div> Sem senha</div>
+    <div class="trust-item"><div class="dot"></div> Sem risco de ban</div>
+    <div class="trust-item"><div class="dot"></div> Resultado em 30 segundos</div>
+    <div class="trust-item"><div class="dot"></div> Pagamento via PIX</div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-section">
+  <div class="container">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-number">+50mil</div>
+        <div class="stat-label">Verificações realizadas</div>
+      </div>
+      <div>
+        <div class="stat-number">30s</div>
+        <div class="stat-label">Tempo médio de resultado</div>
+      </div>
+      <div>
+        <div class="stat-number">0</div>
+        <div class="stat-label">Contas banidas pelo uso</div>
+      </div>
+      <div>
+        <div class="stat-number">4.9★</div>
+        <div class="stat-label">Avaliação dos usuários</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMO FUNCIONA -->
+<section id="como-funciona">
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Como funciona</div>
+      <h2 class="section-title">Três passos simples</h2>
+      <p class="section-sub">Funciona direto no seu navegador, sem pedir sua senha, sem instalar nada pesado.</p>
+    </div>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <div class="step-title">Instale a extensão gratuita</div>
+        <div class="step-desc">Clique em "Verificar agora" e instale a extensão FoiEmbora na Chrome Web Store. Leva menos de 30 segundos.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <div class="step-title">Abra o Instagram normalmente</div>
+        <div class="step-desc">Acesse seu Instagram no navegador como sempre faz. Faça login normalmente — nós nunca vemos sua senha.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <div class="step-title">Veja o resultado</div>
+        <div class="step-desc">A extensão analisa sua lista de seguidores e mostra exatamente quem não te segue de volta, com nome e foto.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALAÇÃO -->
+<section id="instalar" style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Instalação</div>
+      <h2 class="section-title">Funciona no seu dispositivo</h2>
+      <p class="section-sub">Escolha como prefere instalar. Desktop é o mais simples — mobile requer um navegador compatível.</p>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;justify-content:center;margin-bottom:2rem">
+      <div style="display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px">
+        <button class="install-tab active" data-tab="desktop" onclick="switchTab('desktop')">💻 Desktop (Chrome)</button>
+        <button class="install-tab" data-tab="android" onclick="switchTab('android')">🤖 Android (Quetta)</button>
+        <button class="install-tab" data-tab="iphone" onclick="switchTab('iphone')">📱 iPhone (Orion)</button>
+      </div>
+    </div>
+
+    <!-- TAB: DESKTOP -->
+    <div class="install-panel active" id="tab-desktop">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;max-width:860px;margin:0 auto">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-title">Baixe a extensão</div>
+          <div class="step-desc">Clique em "Verificar agora" e baixe o arquivo <strong>.zip</strong> da extensão FoiEmbora.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-title">Abra chrome://extensions</div>
+          <div class="step-desc">No Chrome, cole <strong>chrome://extensions</strong> na barra de endereço e ative o <strong>Modo do desenvolvedor</strong> (canto superior direito).</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-title">Carregue a extensão</div>
+          <div class="step-desc">Clique em <strong>"Carregar sem compactação"</strong> e selecione a pasta da extensão que você baixou.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-title">Use no Instagram</div>
+          <div class="step-desc">Abra o Instagram no Chrome, clique no ícone da extensão 🔍 e clique em <strong>"Verificar agora"</strong>.</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:2rem">
+        <a href="#verificar" class="btn-hero" onclick="openModal();return false;" style="display:inline-block;padding:0.875rem 2rem;border-radius:12px;background:var(--grad);color:#fff;font-weight:700;text-decoration:none">Baixar extensão →</a>
+      </div>
+    </div>
+
+    <!-- TAB: ANDROID -->
+    <div class="install-panel" id="tab-android" style="display:none">
+      <div style="max-width:700px;margin:0 auto">
+        <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.25rem">ℹ️</span>
+          <span style="font-size:0.875rem;color:var(--muted)">O Chrome padrão do Android não suporta extensões. Use o <strong style="color:var(--text)">Quetta Browser</strong> — disponível gratuitamente na Play Store.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-title">Instale o Quetta Browser</div>
+            <div class="step-desc">Baixe o <strong>Quetta Browser</strong> na Play Store. É gratuito e suporta extensões do Chrome nativamente.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-title">Acesse a extensão</div>
+            <div class="step-desc">No Quetta, abra o menu → <strong>Extensões</strong> → pesquise "FoiEmbora" ou carregue o .zip manualmente.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-title">Abra o Instagram</div>
+            <div class="step-desc">Acesse <strong>instagram.com</strong> no Quetta Browser e faça login normalmente.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <div class="step-title">Clique na extensão</div>
+            <div class="step-desc">Toque no ícone 🔍 da extensão no menu do navegador e clique em <strong>"Verificar"</strong>.</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:2rem">
+          <a href="https://play.google.com/store/apps/details?id=com.quetta.browser" target="_blank" class="btn-hero" style="display:inline-block;padding:0.875rem 2rem;border-radius:12px;background:var(--grad);color:#fff;font-weight:700;text-decoration:none">Baixar Quetta Browser →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: IPHONE -->
+    <div class="install-panel" id="tab-iphone" style="display:none">
+      <div style="max-width:700px;margin:0 auto">
+        <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.25rem">⚠️</span>
+          <span style="font-size:0.875rem;color:var(--muted)">No iPhone, use o <strong style="color:var(--text)">Orion Browser by Kagi</strong> — único navegador iOS com suporte a extensões Chrome. Compatibilidade parcial devido a limitações da Apple.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-title">Instale o Orion Browser</div>
+            <div class="step-desc">Baixe o <strong>Orion by Kagi</strong> na App Store. Gratuito, rápido e sem anúncios.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-title">Adicione a extensão</div>
+            <div class="step-desc">No Orion, vá em <strong>Configurações → Extensões → Adicionar</strong> e insira o link da extensão FoiEmbora.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-title">Acesse o Instagram</div>
+            <div class="step-desc">Abra <strong>instagram.com</strong> no Orion Browser e faça login com sua conta.</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <div class="step-title">Execute a verificação</div>
+            <div class="step-desc">Toque no ícone da extensão e clique em <strong>"Verificar agora"</strong>. Resultado em segundos.</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:2rem">
+          <a href="https://apps.apple.com/app/orion-browser-by-kagi/id1484498200" target="_blank" class="btn-hero" style="display:inline-block;padding:0.875rem 2rem;border-radius:12px;background:var(--grad);color:#fff;font-weight:700;text-decoration:none">Baixar Orion Browser →</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section style="background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Funcionalidades</div>
+      <h2 class="section-title">O que você descobre</h2>
+      <p class="section-sub">Tudo que você precisa para gerenciar sua presença no Instagram com inteligência.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div class="feature-title">Quem não te segue de volta</div>
+        <div class="feature-desc">Lista completa de todos os perfis que você segue, mas que não te seguem de volta.</div>
+        <span class="feature-tag tag-free">Avulso R$5</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤝</div>
+        <div class="feature-title">Seguidores mútuos</div>
+        <div class="feature-desc">Veja quem realmente te segue de volta — seus seguidores genuínos.</div>
+        <span class="feature-tag tag-free">Avulso R$5</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👻</div>
+        <div class="feature-title">Ghost followers</div>
+        <div class="feature-desc">Perfis que te seguem mas nunca curtiram ou comentaram nada. Seguidores fantasma que prejudicam seu engajamento.</div>
+        <span class="feature-tag tag-semestral">Semestral</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📉</div>
+        <div class="feature-title">Histórico de saídas</div>
+        <div class="feature-desc">Veja quem parou de te seguir e quando. Correlacione com seus posts para entender o que afasta seguidores.</div>
+        <span class="feature-tag tag-semestral">Semestral</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <div class="feature-title">Alerta de unfollow</div>
+        <div class="feature-desc">Receba um e-mail semanal automático com todos que pararam de te seguir na semana.</div>
+        <span class="feature-tag tag-semestral">Semestral</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Relatório exportável</div>
+        <div class="feature-desc">Exporte sua lista em PDF ou planilha para analisar ou compartilhar com clientes. Ideal para agências.</div>
+        <span class="feature-tag tag-pro">Em breve</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="planos">
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Planos</div>
+      <h2 class="section-title">Simples e transparente</h2>
+      <p class="section-sub">Pague apenas uma vez ou economize com o semestral. Sem mensalidade, sem renovação surpresa.</p>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- AVULSO -->
+      <div class="plan-card">
+        <div class="plan-name">Avulso</div>
+        <div class="plan-price"><span>R$</span>5</div>
+        <div class="plan-period">por verificação &nbsp;·&nbsp; pague e use na hora</div>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Lista de quem não te segue</li>
+          <li><span class="check">✓</span> Seguidores mútuos</li>
+          <li><span class="check">✓</span> Resultado instantâneo</li>
+          <li><span class="check">✓</span> Pagamento por PIX</li>
+          <li class="disabled"><span class="x">–</span> Ghost followers</li>
+          <li class="disabled"><span class="x">–</span> Histórico de saídas</li>
+          <li class="disabled"><span class="x">–</span> Alertas semanais</li>
+        </ul>
+        <a href="#" class="btn-plan btn-plan-outline" onclick="openModal(); return false;">Pagar R$5 por PIX</a>
+      </div>
+
+      <!-- TRIMESTRAL -->
+      <div class="plan-card featured">
+        <div class="plan-name">Trimestral</div>
+        <div class="plan-price"><span>R$</span>24<span style="font-size:1.5rem">,90</span></div>
+        <div class="plan-period">por 3 meses &nbsp;·&nbsp; equivale a R$8,30/mês</div>
+        <hr class="plan-divider" />
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Verificações ilimitadas</li>
+          <li><span class="check">✓</span> Ghost followers</li>
+          <li><span class="check">✓</span> Histórico dos últimos 3 meses</li>
+          <li><span class="check">✓</span> Alertas semanais por e-mail</li>
+          <li><span class="check">✓</span> 1 conta Instagram</li>
+          <li><span class="check">✓</span> Suporte prioritário</li>
+          <li><span class="check">✓</span> PIX ou cartão de crédito</li>
+        </ul>
+        <a href="#" class="btn-plan btn-plan-primary" onclick="openModalSemestral(); return false;">Assinar Trimestral</a>
+        <div class="savings-badge">💰 Economize vs. 5 avulsos</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SEGURANÇA -->
+<section>
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Segurança</div>
+      <h2 class="section-title">Por que é seguro?</h2>
+      <p class="section-sub">Desenvolvido com foco total em não colocar sua conta em risco.</p>
+    </div>
+    <div class="security-grid">
+      <div class="security-card">
+        <div class="security-icon">🔒</div>
+        <div class="security-title">Sem senha</div>
+        <div class="security-desc">Nunca pedimos sua senha do Instagram. A extensão funciona com sua sessão já aberta no navegador.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon">🏠</div>
+        <div class="security-title">Roda no seu navegador</div>
+        <div class="security-desc">Toda a leitura acontece no seu computador, com seu IP. Nenhum servidor externo acessa o Instagram por você.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon">👁️</div>
+        <div class="security-title">Somente leitura</div>
+        <div class="security-desc">A extensão só lê dados — nunca segue, deixa de seguir, curte ou comenta nada automaticamente.</div>
+      </div>
+      <div class="security-card">
+        <div class="security-icon">⚡</div>
+        <div class="security-title">Velocidade humana</div>
+        <div class="security-desc">A leitura simula o comportamento humano normal, sem requisições em massa que possam chamar atenção.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="background: var(--bg2); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Dúvidas</div>
+      <h2 class="section-title">Perguntas frequentes</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Minha conta pode ser banida?
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Não. O FoiEmbora funciona de forma passiva, apenas lendo dados que já estão no seu navegador. Não automatizamos nenhuma ação (seguir, deixar de seguir, curtir). O Instagram bloqueia automações de ação — leitura passiva é equivalente a você mesmo abrindo a página.</div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Preciso fornecer minha senha?
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Nunca. Você apenas instala a extensão e abre o Instagram normalmente no seu navegador — como sempre faz. Nós nunca vemos, armazenamos ou transmitimos sua senha.</div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Como funciona o pagamento avulso?
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Você paga R$5 via PIX e recebe instantaneamente um código de acesso no e-mail. Insira o código na extensão e pronto — a verificação fica liberada por 24h.</div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          O plano semestral renova automaticamente?
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Apenas se você optar por isso. Você pode pagar por PIX (sem renovação automática) ou cartão de crédito com renovação semestral automática. Você escolhe na hora do pagamento.</div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Funciona com contas privadas?
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Sim. A extensão funciona com qualquer tipo de conta — pública ou privada — pois acessa os dados através da sua própria sessão logada.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section">
+  <div class="container" style="position:relative;z-index:1;">
+    <h2>Pronto para descobrir<br /><span class="grad-text">a verdade</span>?</h2>
+    <p>Mais de 50 mil verificações realizadas. Comece agora por R$5 ou economize com o semestral.</p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+      <a href="#" class="btn-hero" onclick="openModal(); return false;">Verificar por R$5 →</a>
+      <a href="#planos" class="btn-hero-outline">Ver planos</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <strong>FoiEmbora</strong> &nbsp;·&nbsp; Feito no Brasil 🇧🇷<br />
+      <span>© 2026 FoiEmbora · foiembora.com.br. Todos os direitos reservados.</span>
+    </div>
+    <div class="footer-links">
+      <a href="#">Termos de uso</a>
+      <a href="#">Privacidade</a>
+      <a href="#">Contato</a>
+    </div>
+  </div>
+</footer>
+
+<!-- MODAL AVULSO -->
+<div class="modal-overlay" id="modal-avulso">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="avulso-step1">
+      <div class="modal-title">Verificação Avulsa</div>
+      <div class="modal-sub">Pague e receba o resultado em segundos. Sem cadastro obrigatório.</div>
+      <div class="modal-price-row">
+        <div class="modal-price-label">Verificação completa — 24h de acesso</div>
+        <div class="modal-price-value grad-text">R$5,00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seu e-mail (para receber o código)</label>
+        <input type="email" id="avulso-email" class="form-input" placeholder="seuemail@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código de indicação <span style="color:var(--dim);font-weight:400">(opcional)</span></label>
+        <input type="text" id="avulso-ref" class="form-input" placeholder="Ex: ABC12345" style="text-transform:uppercase" />
+        <div style="font-size:0.72rem;color:var(--dim);margin-top:0.25rem">Se alguém te indicou, coloque o código dela aqui</div>
+      </div>
+      <div class="pix-section">
+        <div class="pix-icon">⚡</div>
+        <div class="pix-title">Pagamento via PIX</div>
+        <div class="pix-desc">Aprovação instantânea. Após o pagamento, o código chega no seu e-mail em até 1 minuto.</div>
+      </div>
+      <button class="btn-full" id="avulso-btn" onclick="handleAvulso()">Gerar PIX — R$5,00</button>
+      <div class="modal-fine">Ao pagar você concorda com os <a href="#" style="color:var(--purple);text-decoration:none;">Termos de uso</a>.</div>
+    </div>
+    <div id="avulso-step2" style="display:none;text-align:center">
+      <div style="font-size:2rem;margin-bottom:0.75rem">📱</div>
+      <div class="modal-title" style="margin-bottom:0.5rem">PIX gerado!</div>
+      <div class="modal-sub">Abra seu banco e pague o PIX. Após confirmação, seu código chega no e-mail.</div>
+      <div id="avulso-qr-wrap" style="background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <img id="avulso-qr-img" src="" alt="QR Code PIX" style="width:180px;height:180px;border-radius:8px;display:none;margin:0 auto 0.75rem">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">Ou copie o código PIX:</div>
+        <div id="avulso-pix-code" style="font-size:0.7rem;word-break:break-all;color:var(--purple);font-family:monospace;background:rgba(168,85,247,0.06);border-radius:8px;padding:0.75rem;max-height:80px;overflow:hidden"></div>
+        <button class="btn-full" onclick="copyPix('avulso')" style="margin-top:0.75rem;background:transparent;border:1px solid var(--border-bright);color:var(--text)">📋 Copiar código PIX</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted)" id="avulso-status-msg">Aguardando pagamento...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TRIMESTRAL -->
+<div class="modal-overlay" id="modal-semestral">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="trim-step1">
+      <div class="modal-title">Plano Trimestral</div>
+      <div class="modal-sub">3 meses completos com verificações ilimitadas e todos os recursos.</div>
+      <div class="modal-price-row">
+        <div class="modal-price-label">3 meses · tudo incluído</div>
+        <div class="modal-price-value grad-text">R$24,90</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seu e-mail</label>
+        <input type="email" id="trim-email" class="form-input" placeholder="seuemail@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código de indicação <span style="color:var(--dim);font-weight:400">(opcional)</span></label>
+        <input type="text" id="trim-ref" class="form-input" placeholder="Ex: ABC12345" style="text-transform:uppercase" />
+      </div>
+      <button class="btn-full" id="trim-btn" onclick="handleSemestral()">Assinar por R$24,90 →</button>
+      <div class="modal-fine">Pagamento via PIX. Acesso liberado imediatamente após confirmação.</div>
+    </div>
+    <div id="trim-step2" style="display:none;text-align:center">
+      <div style="font-size:2rem;margin-bottom:0.75rem">📱</div>
+      <div class="modal-title" style="margin-bottom:0.5rem">PIX gerado!</div>
+      <div class="modal-sub">Pague e tenha 3 meses de acesso total liberados automaticamente.</div>
+      <div id="trim-qr-wrap" style="background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <img id="trim-qr-img" src="" alt="QR Code PIX" style="width:180px;height:180px;border-radius:8px;display:none;margin:0 auto 0.75rem">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">Ou copie o código PIX:</div>
+        <div id="trim-pix-code" style="font-size:0.7rem;word-break:break-all;color:var(--purple);font-family:monospace;background:rgba(168,85,247,0.06);border-radius:8px;padding:0.75rem;max-height:80px;overflow:hidden"></div>
+        <button class="btn-full" onclick="copyPix('trim')" style="margin-top:0.75rem;background:transparent;border:1px solid var(--border-bright);color:var(--text)">📋 Copiar código PIX</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted)" id="trim-status-msg">Aguardando pagamento...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openModal() {
+    document.getElementById('modal-avulso').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openModalSemestral() {
+    document.getElementById('modal-semestral').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+    document.body.style.overflow = '';
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    // Reset modals to step 1
+    ['avulso-step1','trim-step1'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
+    ['avulso-step2','trim-step2'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+    const ab = document.getElementById('avulso-btn'); if(ab) { ab.disabled=false; ab.textContent='Gerar PIX — R$5,00'; }
+    const tb = document.getElementById('trim-btn'); if(tb) { tb.disabled=false; tb.textContent='Assinar por R$24,90 →'; }
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  });
+
+  function switchTab(tab) {
+    document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.install-panel').forEach(p => p.style.display = 'none');
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`tab-${tab}`).style.display = 'block';
+    document.getElementById(`tab-${tab}`).classList.remove('active');
+    void document.getElementById(`tab-${tab}`).offsetWidth;
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
+
+  function toggleFaq(el) {
+    const item = el.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  let avulsoPid = null, trimPid = null, pollTimer = null;
+
+  async function handleAvulso() {
+    const email = document.getElementById('avulso-email').value.trim();
+    const ref   = document.getElementById('avulso-ref').value.trim().toUpperCase();
+    if (!email || !email.includes('@')) { alert('Digite um e-mail válido.'); return; }
+    const btn = document.getElementById('avulso-btn');
+    btn.disabled = true; btn.textContent = 'Gerando PIX...';
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email, plan:'avulso', ref: ref || null})
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      avulsoPid = data.payment_id;
+      document.getElementById('avulso-step1').style.display = 'none';
+      document.getElementById('avulso-step2').style.display = 'block';
+      document.getElementById('avulso-pix-code').textContent = data.pix.qr_code;
+      if (data.pix.qr_base64) {
+        const img = document.getElementById('avulso-qr-img');
+        img.src = 'data:image/png;base64,' + data.pix.qr_base64;
+        img.style.display = 'block';
+      }
+      startPolling('avulso', avulsoPid);
+    } catch(e) {
+      alert('Erro ao gerar PIX: ' + e.message);
+      btn.disabled = false; btn.textContent = 'Gerar PIX — R$5,00';
+    }
+  }
+
+  async function handleSemestral() {
+    const email = document.getElementById('trim-email').value.trim();
+    const ref   = document.getElementById('trim-ref').value.trim().toUpperCase();
+    if (!email || !email.includes('@')) { alert('Digite um e-mail válido.'); return; }
+    const btn = document.getElementById('trim-btn');
+    btn.disabled = true; btn.textContent = 'Gerando PIX...';
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email, plan:'trimestral', ref: ref || null})
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      trimPid = data.payment_id;
+      document.getElementById('trim-step1').style.display = 'none';
+      document.getElementById('trim-step2').style.display = 'block';
+      document.getElementById('trim-pix-code').textContent = data.pix.qr_code;
+      if (data.pix.qr_base64) {
+        const img = document.getElementById('trim-qr-img');
+        img.src = 'data:image/png;base64,' + data.pix.qr_base64;
+        img.style.display = 'block';
+      }
+      startPolling('trim', trimPid);
+    } catch(e) {
+      alert('Erro ao gerar PIX: ' + e.message);
+      btn.disabled = false; btn.textContent = 'Assinar por R$24,90 →';
+    }
+  }
+
+  function startPolling(prefix, pid) {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      const res = await fetch('/api/payment/' + pid + '/status');
+      const data = await res.json();
+      if (data.status === 'approved') {
+        clearInterval(pollTimer);
+        document.getElementById(prefix + '-status-msg').innerHTML =
+          '<span style="color:#22c55e;font-weight:700">✅ Pagamento confirmado! Código enviado para o seu e-mail.</span>';
+      }
+    }, 5000);
+  }
+
+  function copyPix(prefix) {
+    const code = document.getElementById(prefix + '-pix-code').textContent;
+    navigator.clipboard.writeText(code).then(() => alert('Código PIX copiado!'));
+  }
+
+  // Animate on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.step-card, .feature-card, .plan-card, .security-card, .faq-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends 'admin/base.html' %}
+{% set is_admin_user = true %}
+{% set active = 'users' %}
+{% block title %}Usuários{% endblock %}
+{% block page_title %}Usuários{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">{{ users|length }} usuários cadastrados</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Plano ativo</th>
+          <th>Vendedor</th>
+          <th>Cadastro</th>
+          <th>Expira em</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        {% set sub = u.active_subscription %}
+        <tr>
+          <td style="font-weight:600">{{ u.email }}</td>
+          <td>
+            {% if sub %}
+              <span class="badge {% if sub.plan == 'trimestral' %}badge-purple{% else %}badge-blue{% endif %}">
+                {{ sub.plan }}
+              </span>
+            {% else %}
+              <span class="badge badge-yellow">sem plano</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--muted)">
+            {{ u.seller.name if u.seller else '—' }}
+            {% if u.seller %}<span class="badge badge-purple" style="margin-left:4px">{{ u.seller.referral_code }}</span>{% endif %}
+          </td>
+          <td style="color:var(--dim);font-size:0.75rem">
+            {{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '—' }}
+          </td>
+          <td style="color:var(--dim);font-size:0.75rem">
+            {% if sub and sub.expires_at %}
+              {{ sub.expires_at.strftime('%d/%m/%Y') }}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;color:var(--dim);padding:2.5rem">Nenhum usuário ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

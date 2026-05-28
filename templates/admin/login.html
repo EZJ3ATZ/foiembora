@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Login — FoiEmbora</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#09090b;--card:#18181c;--border:rgba(255,255,255,0.08);--text:#f4f4f5;--muted:#a1a1aa;--grad:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);--red:#ef4444;--green:#22c55e}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center}
+.box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:380px;position:relative}
+.box::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(ellipse,rgba(131,58,180,0.15),transparent 65%);pointer-events:none}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.1rem;margin-bottom:1.75rem}
+.logo-icon{width:32px;height:32px;border-radius:8px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.role-badge{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;padding:2px 8px;border-radius:999px;margin-left:auto}
+.role-admin{background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3)}
+.role-seller{background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.3)}
+h1{font-size:1.4rem;font-weight:800;margin-bottom:0.35rem}
+.sub{font-size:0.875rem;color:var(--muted);margin-bottom:1.75rem}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:0.75rem;font-weight:600;color:var(--muted);margin-bottom:0.4rem}
+.form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--text);padding:0.65rem 1rem;font-size:0.9rem;font-family:inherit;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:rgba(168,85,247,0.5)}
+.form-input::placeholder{color:#52525b}
+.btn{width:100%;padding:0.75rem;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;background:var(--grad);border:none;color:#fff;margin-top:0.5rem;transition:opacity 0.2s}
+.btn:hover{opacity:0.9}
+.alert{padding:0.65rem 1rem;border-radius:9px;font-size:0.82rem;margin-bottom:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#fca5a5}
+.other-link{text-align:center;margin-top:1.25rem;font-size:0.8rem;color:var(--muted)}
+.other-link a{color:#a855f7}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">
+    <div class="logo-icon">🔍</div>
+    FoiEmbora
+    {% if role == 'admin' %}
+      <span class="role-badge role-admin">Admin</span>
+    {% else %}
+      <span class="role-badge role-seller">Vendedor</span>
+    {% endif %}
+  </div>
+
+  <h1>Entrar no painel</h1>
+  <p class="sub">{% if role == 'admin' %}Acesso restrito — administração.{% else %}Acesse seu painel de vendas.{% endif %}</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}<div class="alert">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" name="email" placeholder="seuemail@gmail.com" required autofocus/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" type="password" name="password" placeholder="••••••••" required/>
+    </div>
+    <button class="btn" type="submit">Entrar →</button>
+  </form>
+
+  {% if role == 'admin' %}
+    <div class="other-link"><a href="{{ url_for('seller_login') }}">Sou vendedor →</a></div>
+  {% else %}
+    <div class="other-link"><a href="{{ url_for('admin_login') }}">Sou administrador →</a></div>
+  {% endif %}
+</div>
+</body>
+</html>
