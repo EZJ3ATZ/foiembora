@@ -416,9 +416,69 @@ def _approve_payment(payment):
     # Envia token por email (quando configurado)
     _send_token_email(sub.user.email, token.token, sub.plan)
 
-def _send_token_email(email, token, plan):
-    # Placeholder — implementar com SendGrid ou similar
-    app.logger.info(f"TOKEN para {email} ({plan}): {token}")
+def _send_token_email(to_email, token, plan):
+    api_key = os.getenv('RESEND_API_KEY')
+    if not api_key:
+        app.logger.warning(f"[EMAIL] RESEND_API_KEY ausente. Token para {to_email}: {token}")
+        return
+
+    plan_label   = 'Trimestral (3 meses)' if plan == 'trimestral' else 'Avulso (24 horas)'
+    plan_cor     = '#a855f7' if plan == 'trimestral' else '#22c55e'
+    base_url     = os.getenv('BASE_URL', 'https://foiembora.up.railway.app')
+
+    html = f"""
+    <div style="background:#09090b;font-family:Inter,sans-serif;padding:40px 20px;max-width:520px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="display:inline-flex;align-items:center;gap:8px;font-size:1.3rem;font-weight:900;color:#f4f4f5">
+          <span style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border-radius:8px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center">👻</span>
+          FoiEmbora
+        </div>
+      </div>
+
+      <div style="background:#18181c;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px">
+        <h1 style="color:#f4f4f5;font-size:1.4rem;font-weight:800;margin:0 0 8px">🔑 Seu acesso está liberado!</h1>
+        <p style="color:#a1a1aa;font-size:0.875rem;margin:0 0 24px">Plano: <strong style="color:{plan_cor}">{plan_label}</strong></p>
+
+        <p style="color:#a1a1aa;font-size:0.875rem;margin:0 0 12px">Seu token de acesso:</p>
+        <div style="background:#09090b;border:1px solid rgba(168,85,247,0.3);border-radius:10px;padding:16px;font-family:monospace;font-size:0.82rem;color:#a855f7;word-break:break-all;margin-bottom:24px">
+          {token}
+        </div>
+
+        <div style="margin-bottom:24px">
+          <p style="color:#a1a1aa;font-size:0.82rem;margin:0 0 8px"><strong style="color:#f4f4f5">Como usar:</strong></p>
+          <p style="color:#a1a1aa;font-size:0.82rem;margin:0 0 6px">1. Instale a extensão FoiEmbora no Chrome</p>
+          <p style="color:#a1a1aa;font-size:0.82rem;margin:0 0 6px">2. Abra o Instagram no navegador</p>
+          <p style="color:#a1a1aa;font-size:0.82rem;margin:0 0 6px">3. Clique no ícone da extensão e cole o token acima</p>
+          <p style="color:#a1a1aa;font-size:0.82rem;margin:0">4. Clique em Analisar!</p>
+        </div>
+
+        <a href="{base_url}/entrar" style="display:block;text-align:center;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;padding:14px;border-radius:10px;font-weight:700;font-size:0.9rem;text-decoration:none">
+          Acessar minha conta →
+        </a>
+      </div>
+
+      <p style="color:#3f3f46;font-size:0.72rem;text-align:center;margin-top:24px">
+        FoiEmbora · foiembora.up.railway.app<br/>
+        Guarde esse e-mail — ele contém seu token de acesso.
+      </p>
+    </div>
+    """
+
+    try:
+        resp = req_lib.post(
+            'https://api.resend.com/emails',
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            json={
+                'from': 'FoiEmbora <noreply@foiembora.com.br>',
+                'to': [to_email],
+                'subject': f'🔑 Seu token de acesso FoiEmbora — {plan_label}',
+                'html': html,
+            },
+            timeout=10
+        )
+        app.logger.info(f"[EMAIL] Enviado para {to_email} — status {resp.status_code}")
+    except Exception as e:
+        app.logger.error(f"[EMAIL] Falha ao enviar para {to_email}: {e}")
 
 # ─── API EXTENSÃO ────────────────────────────────────────────────────────────
 @app.route('/api/token/validate')
