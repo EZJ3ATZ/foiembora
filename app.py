@@ -838,6 +838,27 @@ def _fetch_ig_counts(username):
 
     return None
 
+@app.route('/api/monitor/list')
+def monitor_list():
+    """Retorna lista atualizada de perfis monitorados (usada pelo auto-refresh do dashboard)."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'ok': False}), 401
+    result = []
+    for mp in user.monitored_profiles.order_by(MonitoredProfile.created_at.desc()).all():
+        snaps = mp.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).limit(2).all()
+        latest = snaps[0] if snaps else None
+        prev   = snaps[1] if len(snaps) > 1 else None
+        result.append({
+            'username':   mp.username,
+            'followers':  latest.followers if latest else 0,
+            'following':  latest.following if latest else 0,
+            'is_private': latest.is_private if latest else False,
+            'diff':       (latest.followers - prev.followers) if (latest and prev) else None,
+            'last_check': latest.created_at.strftime('%d/%m %H:%M') if latest else None,
+        })
+    return jsonify({'ok': True, 'profiles': result})
+
 @app.route('/api/monitor/add', methods=['POST'])
 def monitor_add():
     user = _get_current_user()

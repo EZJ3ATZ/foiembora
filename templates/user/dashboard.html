@@ -321,7 +321,7 @@
           </div>
           <div style="display:flex;gap:0.75rem;align-items:flex-start">
             <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">2</div>
-            <div><p style="font-size:0.85rem;font-weight:600">Ative no Chrome</p><p style="font-size:0.78rem;color:var(--muted)">Vá em <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px">chrome://extensions</code>, ative "modo desenvolvedor" e arraste o ZIP.</p></div>
+            <div><p style="font-size:0.85rem;font-weight:600">Instale no Chrome</p><p style="font-size:0.78rem;color:var(--muted)">Extraia o ZIP em uma pasta, vá em <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px">chrome://extensions</code>, ative "Modo desenvolvedor" e clique em "Carregar sem compactação" → selecione a pasta.</p></div>
           </div>
           <div style="display:flex;gap:0.75rem;align-items:flex-start">
             <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">3</div>
@@ -513,79 +513,52 @@ async function adicionarPerfil() {
   }
 }
 
-// ── Spy: verificar agora ──
-async function verificarAgora(username) {
-  const card = document.getElementById('pcard-' + username);
-  const btn = card.querySelector('.btn-check');
-  btn.textContent = '...';
-  btn.disabled = true;
+// ── Spy: verificar agora — abre modal com instruções da extensão ──
+function verificarAgora(username) {
+  document.getElementById('spy-modal-username').textContent = username;
+  document.getElementById('spy-modal-ig-link').href = 'https://www.instagram.com/' + username + '/';
+  document.getElementById('modal-spy-how').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
+function closeSpyModal() {
+  document.getElementById('modal-spy-how').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Atualiza card quando extensão enviar dado via spy/update
+// (recarrega a lista de perfis monitorados silenciosamente)
+async function refreshSpyList() {
   try {
-    const r = await fetch('/api/monitor/check/' + username, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
+    const r = await fetch('/api/monitor/list');
     const d = await r.json();
-    if (d.ok) {
+    if (!d.ok || !d.profiles) return;
+    d.profiles.forEach(p => {
+      const card = document.getElementById('pcard-' + p.username);
+      if (!card) return;
       const countsEl = card.querySelector('.profile-counts');
-      countsEl.innerHTML = `<strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo`;
-      const actionsEl = card.querySelector('.profile-actions');
-      const oldBadge = actionsEl.querySelector('.diff-badge');
-      if (oldBadge) oldBadge.remove();
-      if (d.diff !== null && d.diff !== undefined) {
-        const badge = document.createElement('span');
-        badge.className = 'diff-badge ' + (d.diff > 0 ? 'diff-up' : d.diff < 0 ? 'diff-down' : 'diff-same');
-        badge.textContent = d.diff > 0 ? '+' + d.diff.toLocaleString() + ' seg.' : d.diff < 0 ? d.diff.toLocaleString() + ' seg.' : 'sem mudança';
-        actionsEl.prepend(badge);
+      if (countsEl) {
+        countsEl.innerHTML = `<strong>${(p.followers||0).toLocaleString('pt-BR')}</strong> seguidores · <strong>${(p.following||0).toLocaleString('pt-BR')}</strong> seguindo`;
       }
       const lastEl = card.querySelector('.last-check');
-      if (lastEl) lastEl.textContent = 'Verificado agora';
-      // Remove manual input se existir
-      const mi = card.querySelector('.manual-input-area');
-      if (mi) mi.remove();
-    } else if (d.blocked) {
-      // Instagram bloqueou — mostra input manual
-      let mi = card.querySelector('.manual-input-area');
-      if (!mi) {
-        mi = document.createElement('div');
-        mi.className = 'manual-input-area';
-        mi.style.cssText = 'margin-top:0.75rem;padding:0.75rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;';
-        mi.innerHTML = `
-          <p style="font-size:0.78rem;color:#f97316;margin-bottom:0.5rem;">⚠️ Instagram bloqueou. Insira a contagem atual manualmente:</p>
-          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-            <input type="number" placeholder="Seguidores" id="m-followers-${username}"
-              style="width:130px;background:#1a1a1e;border:1px solid rgba(255,255,255,0.1);color:#f4f4f5;padding:0.4rem 0.6rem;border-radius:8px;font-size:0.82rem;">
-            <input type="number" placeholder="Seguindo" id="m-following-${username}"
-              style="width:110px;background:#1a1a1e;border:1px solid rgba(255,255,255,0.1);color:#f4f4f5;padding:0.4rem 0.6rem;border-radius:8px;font-size:0.82rem;">
-            <button onclick="salvarManual('${username}')"
-              style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:#f97316;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;">
-              ✓ Salvar
-            </button>
-          </div>`;
-        card.querySelector('.profile-info').appendChild(mi);
+      if (lastEl && p.last_check) lastEl.textContent = 'Última verificação: ' + p.last_check;
+      const actionsEl = card.querySelector('.profile-actions');
+      if (actionsEl && p.diff !== null && p.diff !== undefined) {
+        const old = actionsEl.querySelector('.diff-badge');
+        if (old) old.remove();
+        const badge = document.createElement('span');
+        badge.className = 'diff-badge ' + (p.diff > 0 ? 'diff-up' : p.diff < 0 ? 'diff-down' : 'diff-same');
+        badge.textContent = p.diff > 0 ? '+' + p.diff + ' seg.' : p.diff < 0 ? p.diff + ' seg.' : 'sem mudança';
+        actionsEl.prepend(badge);
       }
-    }
-  } catch(e) { console.error(e); }
-
-  btn.textContent = '↻ Verificar';
-  btn.disabled = false;
+    });
+  } catch(_) {}
 }
 
-async function salvarManual(username) {
-  const followers = parseInt(document.getElementById('m-followers-' + username).value) || 0;
-  const following = parseInt(document.getElementById('m-following-' + username).value) || 0;
-  const r = await fetch('/api/monitor/check/' + username, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({followers, following})
-  });
-  const d = await r.json();
-  if (d.ok) {
-    const card = document.getElementById('pcard-' + username);
-    const countsEl = card.querySelector('.profile-counts');
-    countsEl.innerHTML = `<strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo`;
-    const mi = card.querySelector('.manual-input-area');
-    if (mi) mi.remove();
-    const lastEl = card.querySelector('.last-check');
-    if (lastEl) lastEl.textContent = 'Salvo manualmente agora';
-  }
-}
+// Auto-refresh quando voltar para a aba (após usar extensão)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshSpyList();
+});
 
 // ── Spy: remover perfil ──
 async function removerPerfil(username) {
@@ -600,6 +573,63 @@ async function removerPerfil(username) {
     }
   }
 }
+</script>
+
+<!-- Modal: como usar extensão para espionar -->
+<div id="modal-spy-how" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);"
+  onclick="if(event.target===this)closeSpyModal()">
+  <div style="background:#18181c;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.5rem;max-width:380px;width:100%;position:relative;">
+    <button onclick="closeSpyModal()" style="position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:#71717a;font-size:1.1rem;cursor:pointer;">✕</button>
+    <div style="font-size:1rem;font-weight:800;margin-bottom:0.25rem">Como atualizar <span style="background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="spy-modal-username">@username</span></div>
+    <div style="font-size:0.78rem;color:#71717a;margin-bottom:1.25rem">Use a extensão FoiEmbora — ela usa sua sessão do Instagram para buscar os dados sem precisar de senha.</div>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem">
+      <div style="display:flex;gap:0.75rem;align-items:center;background:#111114;border-radius:10px;padding:0.75rem">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:#fff;flex-shrink:0">1</div>
+        <div style="font-size:0.82rem">Abra o <strong>Instagram</strong> no Chrome e faça login</div>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;background:#111114;border-radius:10px;padding:0.75rem">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:#fff;flex-shrink:0">2</div>
+        <div style="font-size:0.82rem">Clique no ícone da extensão <strong>FoiEmbora</strong> na barra do Chrome</div>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;background:#111114;border-radius:10px;padding:0.75rem">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:flex-start;font-weight:800;font-size:0.8rem;color:#fff;flex-shrink:0;padding-left:9px">3</div>
+        <div style="font-size:0.82rem">Vá na aba <strong>Espionar perfil</strong> → digite <strong>@<span class="spy-modal-uname2"></span></strong> → Espionar</div>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;background:#111114;border-radius:10px;padding:0.75rem">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:#fff;flex-shrink:0">4</div>
+        <div style="font-size:0.82rem">Volte aqui — os dados aparecem automaticamente ✅</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;">
+      <a id="spy-modal-ig-link" href="https://www.instagram.com/" target="_blank"
+        style="flex:1;text-align:center;background:var(--grad);border:none;color:#fff;padding:0.7rem;border-radius:10px;font-size:0.85rem;font-weight:700;text-decoration:none;">
+        Abrir Instagram →
+      </a>
+      <button onclick="closeSpyModal()" style="padding:0.7rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#a1a1aa;border-radius:10px;font-size:0.85rem;cursor:pointer;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+#modal-spy-how { display: none; }
+#modal-spy-how.open { display: flex; }
+</style>
+
+<script>
+// Sincroniza nome no modal
+const _origVerificar = verificarAgora;
+document.addEventListener('DOMContentLoaded', () => {
+  // Atualiza o span .spy-modal-uname2 quando o modal abre
+  document.getElementById('modal-spy-how').addEventListener('transitionend', () => {});
+});
+// Patch para preencher o segundo span
+const __origV = verificarAgora;
+window.verificarAgora = function(username) {
+  document.querySelectorAll('.spy-modal-uname2').forEach(el => el.textContent = username);
+  __origV(username);
+};
 </script>
 </body>
 </html>
