@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id);
-
 const API_BASE = 'https://foiembora.up.railway.app';
+
+// ── Utilitários ──────────────────────────────────────────────────────────────
 
 function showScreen(id) {
   ['screen-token', 'screen-wrong', 'screen-main'].forEach(s => {
@@ -18,41 +19,68 @@ async function validateToken(token) {
     const data = await res.json();
     return data.valid === true;
   } catch {
-    return true;
+    return true; // sem conexao = nao invalida token salvo
   }
 }
 
+// Encontra aba do Instagram — 3 métodos em cascata para máxima compatibilidade
 async function getInstagramTab() {
+  // Método 1: query por URL (Chrome desktop)
   try {
-    const tabs = await chrome.tabs.query({ url: 'https://www.instagram.com/*' });
-    return tabs.length > 0 ? tabs[0] : null;
+    const tabs = await chrome.tabs.query({ url: '*://www.instagram.com/*' });
+    if (tabs && tabs.length > 0) return tabs[0];
+  } catch (_) {}
+
+  // Método 2: aba ativa (funciona no Orion iOS)
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs[0] && tabs[0].url && tabs[0].url.includes('instagram.com')) return tabs[0];
+  } catch (_) {}
+
+  // Método 3: varrer todas as abas
+  try {
+    const tabs = await chrome.tabs.query({});
+    if (tabs) {
+      const ig = tabs.find(t => t.url && t.url.includes('instagram.com'));
+      if (ig) return ig;
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+// Envia mensagem para o content script — sem executeScript (não existe no iOS)
+async function sendToIg(tab, message) {
+  try {
+    chrome.tabs.sendMessage(tab.id, message);
+    return true;
   } catch (_) {
-    // Orion / browsers com API limitada — tenta pegar aba ativa
-    try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const tab = tabs[0];
-      if (tab && tab.url && tab.url.includes('instagram.com')) return tab;
-    } catch (_2) {}
-    return null;
+    return false;
   }
 }
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
-  const stored = await chrome.storage.local.get('access_token');
-  const savedToken = stored.access_token;
+  try {
+    const stored = await chrome.storage.local.get('access_token');
+    const savedToken = stored.access_token;
 
-  if (savedToken) {
-    const valid = await validateToken(savedToken);
-    if (valid) {
-      await setupMainScreen();
-      return;
+    if (savedToken) {
+      const valid = await validateToken(savedToken);
+      if (valid) {
+        await setupMainScreen();
+        return;
+      }
+      await chrome.storage.local.remove('access_token');
     }
-    await chrome.storage.local.remove('access_token');
-  }
+  } catch (_) {}
 
   showScreen('screen-token');
   setupTokenScreen();
 }
+
+// ── Tela de login (email) ─────────────────────────────────────────────────────
 
 function setupTokenScreen() {
   const btn   = $('btn-validate');
@@ -62,7 +90,7 @@ function setupTokenScreen() {
   const btnSite = $('btn-open-site');
   if (btnSite) {
     btnSite.addEventListener('click', () => {
-      chrome.tabs.create({ url: `${API_BASE}/entrar` });
+      try { chrome.tabs.create({ url: `${API_BASE}/entrar` }); } catch (_) {}
     });
   }
 
@@ -90,7 +118,7 @@ function setupTokenScreen() {
         btn.textContent = 'Entrar →';
       }
     } catch (_) {
-      err.textContent = 'Sem conexao. Verifique sua internet.';
+      err.textContent = 'Sem conexao com o servidor. Verifique sua internet.';
       err.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Entrar →';
@@ -101,14 +129,19 @@ function setupTokenScreen() {
   input.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 }
 
+// ── Tela principal ────────────────────────────────────────────────────────────
+
 async function setupMainScreen() {
   const igTab = await getInstagramTab();
 
   if (!igTab) {
     showScreen('screen-wrong');
-    $('btn-open-ig').addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://www.instagram.com/' });
-    });
+    const btnIg = $('btn-open-ig');
+    if (btnIg) {
+      btnIg.addEventListener('click', () => {
+        try { chrome.tabs.create({ url: 'https://www.instagram.com/' }); } catch (_) {}
+      });
+    }
     return;
   }
 
@@ -124,28 +157,31 @@ async function setupMainScreen() {
     $('results-new').style.display = 'none';
     $('stats-row').style.display = 'none';
 
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: igTab.id },
-        files: ['content.js']
-      });
-    } catch (_) {}
-
-    chrome.tabs.sendMessage(igTab.id, { action: 'analyze' });
+    const ok = await sendToIg(igTab, { action: 'analyze' });
+    if (!ok) {
+      $('status-box').classList.remove('visible');
+      $('error-box').classList.add('visible');
+      $('error-box').textContent = 'Nao foi possivel conectar ao Instagram. Reabra a extensao com o Instagram aberto.';
+      $('btn-analyze').disabled = false;
+      $('btn-analyze').textContent = 'Tentar novamente';
+    }
   });
 }
 
+// ── Listas de usuários ────────────────────────────────────────────────────────
+
 function buildUserList(users, containerId, isUnfollower) {
   const container = $(containerId);
+  if (!container) return;
   container.innerHTML = '';
-  if (users.length === 0) return;
+  if (!users || users.length === 0) return;
 
   users.forEach(user => {
-    const username = typeof user === 'string' ? user : user.username;
-    const full_name = user.full_name || null;
+    const username        = typeof user === 'string' ? user : user.username;
+    const full_name       = user.full_name || null;
     const profile_pic_url = user.profile_pic_url || null;
-    const is_verified = user.is_verified || false;
-    const is_private = user.is_private || false;
+    const is_verified     = user.is_verified || false;
+    const is_private      = user.is_private || false;
 
     const a = document.createElement('a');
     a.className = 'user-item';
@@ -160,7 +196,6 @@ function buildUserList(users, containerId, isUnfollower) {
     const img = document.createElement('img');
     img.className = 'user-avatar';
     img.referrerPolicy = 'no-referrer';
-    img.crossOrigin = 'anonymous';
     img.src = profile_pic_url || fallbackSvg;
     img.onerror = () => { img.src = fallbackSvg; };
 
@@ -194,83 +229,84 @@ function buildUserList(users, containerId, isUnfollower) {
   });
 }
 
+// ── Mensagens do content script (analyze) ────────────────────────────────────
+
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === 'status') {
-    $('status-text').textContent = msg.text;
-  }
-
-  if (msg.action === 'error') {
-    $('status-box').classList.remove('visible');
-    $('error-box').classList.add('visible');
-    $('error-box').textContent = 'Erro: ' + msg.text;
-    $('btn-analyze').disabled = false;
-    $('btn-analyze').textContent = 'Tentar novamente';
-  }
-
-  if (msg.action === 'result') {
-    $('status-box').classList.remove('visible');
-
-    // Stats
-    $('stat-following').textContent = msg.totalFollowing;
-    $('stat-followers').textContent = msg.totalFollowers;
-    $('stat-notback').textContent = msg.notFollowingBack.length;
-    $('stats-row').style.display = 'flex';
-
-    // Secao 1: Nao seguem de volta (calculado localmente, sempre disponivel)
-    const notback = msg.notFollowingBack;
-    $('count-notback').textContent = notback.length;
-    $('results-notback').style.display = 'block';
-    buildUserList(notback, 'list-notback', false);
-
-    // Secao 2: Pararam de te seguir (do backend, historico)
-    const unfollowers = msg.unfollowers || [];
-    if (msg.snapshotOk && unfollowers.length >= 0) {
-      $('count-unfollowers').textContent = unfollowers.length;
-      $('results-unfollowers').style.display = 'block';
-      if (unfollowers.length === 0) {
-        $('list-unfollowers').innerHTML = '<div class="empty-msg">Ninguem parou de te seguir desde a ultima analise</div>';
-      } else {
-        buildUserList(unfollowers, 'list-unfollowers', true);
-      }
-    } else if (!msg.snapshotOk) {
-      $('results-unfollowers').style.display = 'block';
-      $('count-unfollowers').textContent = '?';
-      $('list-unfollowers').innerHTML = '<div class="empty-msg">Primeira analise salva! Fa a proxima para ver quem saiu.</div>';
+  try {
+    if (msg.action === 'status') {
+      const el = $('status-text');
+      if (el) el.textContent = msg.text;
     }
 
-    // Secao 3: Novos seguidores (do backend)
-    const newFollowers = msg.new_followers || [];
-    if (msg.snapshotOk && newFollowers.length >= 0) {
-      $('count-new').textContent = newFollowers.length;
-      $('results-new').style.display = 'block';
-      if (newFollowers.length === 0) {
-        $('list-new').innerHTML = '<div class="empty-msg">Nenhum novo seguidor desde a ultima analise</div>';
-      } else {
-        buildUserList(newFollowers, 'list-new', false);
-      }
+    if (msg.action === 'error') {
+      $('status-box').classList.remove('visible');
+      $('error-box').classList.add('visible');
+      $('error-box').textContent = 'Erro: ' + msg.text;
+      const btn = $('btn-analyze');
+      if (btn) { btn.disabled = false; btn.textContent = 'Tentar novamente'; }
     }
 
-    $('btn-analyze').disabled = false;
-    $('btn-analyze').textContent = 'Verificar novamente';
-  }
+    if (msg.action === 'result') {
+      $('status-box').classList.remove('visible');
+
+      $('stat-following').textContent = msg.totalFollowing;
+      $('stat-followers').textContent = msg.totalFollowers;
+      $('stat-notback').textContent   = msg.notFollowingBack.length;
+      $('stats-row').style.display    = 'flex';
+
+      const notback = msg.notFollowingBack;
+      $('count-notback').textContent = notback.length;
+      $('results-notback').style.display = 'block';
+      buildUserList(notback, 'list-notback', false);
+
+      const unfollowers = msg.unfollowers || [];
+      if (msg.snapshotOk && unfollowers.length >= 0) {
+        $('count-unfollowers').textContent = unfollowers.length;
+        $('results-unfollowers').style.display = 'block';
+        if (unfollowers.length === 0) {
+          $('list-unfollowers').innerHTML = '<div class="empty-msg">Ninguem parou de te seguir desde a ultima analise</div>';
+        } else {
+          buildUserList(unfollowers, 'list-unfollowers', true);
+        }
+      } else if (!msg.snapshotOk) {
+        $('results-unfollowers').style.display = 'block';
+        $('count-unfollowers').textContent = '?';
+        $('list-unfollowers').innerHTML = '<div class="empty-msg">Primeira analise salva! Faca a proxima para ver quem saiu.</div>';
+      }
+
+      const newFollowers = msg.new_followers || [];
+      if (msg.snapshotOk && newFollowers.length >= 0) {
+        $('count-new').textContent = newFollowers.length;
+        $('results-new').style.display = 'block';
+        if (newFollowers.length === 0) {
+          $('list-new').innerHTML = '<div class="empty-msg">Nenhum novo seguidor desde a ultima analise</div>';
+        } else {
+          buildUserList(newFollowers, 'list-new', false);
+        }
+      }
+
+      const btn = $('btn-analyze');
+      if (btn) { btn.disabled = false; btn.textContent = 'Verificar novamente'; }
+    }
+  } catch (_) {}
 });
 
-// ── Tab switching ──
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
 function switchTab(tab) {
-  $('panel-meu').style.display  = tab === 'meu'  ? 'block' : 'none';
-  $('panel-spy').style.display  = tab === 'spy'  ? 'block' : 'none';
-  $('tab-meu').style.background = tab === 'meu'
-    ? 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)' : 'transparent';
-  $('tab-meu').style.color = tab === 'meu' ? '#fff' : '#71717a';
-  $('tab-spy').style.background = tab === 'spy'
-    ? 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)' : 'transparent';
-  $('tab-spy').style.color = tab === 'spy' ? '#fff' : '#71717a';
+  $('panel-meu').style.display  = tab === 'meu' ? 'block' : 'none';
+  $('panel-spy').style.display  = tab === 'spy' ? 'block' : 'none';
+  $('tab-meu').style.background = tab === 'meu' ? 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)' : 'transparent';
+  $('tab-meu').style.color      = tab === 'meu' ? '#fff' : '#71717a';
+  $('tab-spy').style.background = tab === 'spy' ? 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)' : 'transparent';
+  $('tab-spy').style.color      = tab === 'spy' ? '#fff' : '#71717a';
 }
 
 $('tab-meu')?.addEventListener('click', () => switchTab('meu'));
 $('tab-spy')?.addEventListener('click', () => switchTab('spy'));
 
-// ── Spy mode ──
+// ── Spy — contagem ────────────────────────────────────────────────────────────
+
 async function runSpy() {
   const igTab = await getInstagramTab();
   if (!igTab) {
@@ -279,7 +315,7 @@ async function runSpy() {
     return;
   }
 
-  const input = $('spy-username');
+  const input    = $('spy-username');
   const username = input.value.trim().replace(/^@/, '');
   if (!username) { input.focus(); return; }
 
@@ -289,66 +325,70 @@ async function runSpy() {
   $('spy-status-text').textContent = `Buscando @${username}...`;
   $('btn-spy').disabled = true;
 
-  try {
-    await chrome.scripting.executeScript({ target: { tabId: igTab.id }, files: ['content.js'] });
-  } catch (_) {}
-
-  chrome.tabs.sendMessage(igTab.id, { action: 'spy', username });
+  const ok = await sendToIg(igTab, { action: 'spy', username });
+  if (!ok) {
+    $('spy-status').style.display = 'none';
+    $('btn-spy').disabled = false;
+    $('spy-error').style.display = 'block';
+    $('spy-error').textContent = 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
+  }
 }
 
 $('btn-spy')?.addEventListener('click', runSpy);
 
-// Listener para spy_result
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === 'status' && $('spy-status')?.style.display !== 'none') {
-    $('spy-status-text').textContent = msg.text;
-  }
-
-  if (msg.action === 'spy_result') {
-    $('spy-status').style.display = 'none';
-    $('btn-spy').disabled = false;
-
-    const info = msg.info;
-    $('spy-name').textContent    = info.full_name || info.username;
-    $('spy-handle').textContent  = '@' + info.username;
-    $('spy-photo').src           = info.profile_pic_url || '';
-    $('spy-followers-num').textContent = Number(info.followers).toLocaleString('pt-BR');
-    $('spy-following-num').textContent = Number(info.following).toLocaleString('pt-BR');
-
-    const diffEl = $('spy-diff-num');
-    if (msg.diff !== null && msg.diff !== undefined) {
-      const d = msg.diff;
-      diffEl.textContent = (d >= 0 ? '+' : '') + d.toLocaleString('pt-BR');
-      diffEl.style.background = d > 0
-        ? 'linear-gradient(135deg,#22c55e,#4ade80)'
-        : d < 0 ? 'linear-gradient(135deg,#ef4444,#f87171)'
-        : 'linear-gradient(135deg,#a855f7,#ec4899)';
-      diffEl.style.webkitBackgroundClip = 'text';
-      diffEl.style.webkitTextFillColor  = 'transparent';
-      diffEl.style.backgroundClip = 'text';
-    } else {
-      diffEl.textContent = '—';
+  try {
+    if (msg.action === 'status' && $('spy-status')?.style.display !== 'none') {
+      $('spy-status-text').textContent = msg.text;
     }
 
-    $('spy-history-msg').textContent = msg.is_new
-      ? 'Primeira verificacao salva! Volte amanha para ver mudancas.'
-      : `Comparado com ${msg.prev_followers?.toLocaleString('pt-BR')} seguidores anteriores`;
+    if (msg.action === 'spy_result') {
+      $('spy-status').style.display = 'none';
+      $('btn-spy').disabled = false;
 
-    $('spy-result').style.display = 'block';
-  }
+      const info = msg.info;
+      $('spy-name').textContent         = info.full_name || info.username;
+      $('spy-handle').textContent       = '@' + info.username;
+      $('spy-photo').src                = info.profile_pic_url || '';
+      $('spy-followers-num').textContent = Number(info.followers).toLocaleString('pt-BR');
+      $('spy-following-num').textContent = Number(info.following).toLocaleString('pt-BR');
 
-  if (msg.action === 'error' && $('spy-status')?.style.display !== 'none') {
-    $('spy-status').style.display = 'none';
-    $('btn-spy').disabled = false;
-    $('spy-error').style.display = 'block';
-    $('spy-error').textContent = msg.text;
-  }
+      const diffEl = $('spy-diff-num');
+      if (msg.diff !== null && msg.diff !== undefined) {
+        const d = msg.diff;
+        diffEl.textContent = (d >= 0 ? '+' : '') + d.toLocaleString('pt-BR');
+        diffEl.style.background = d > 0
+          ? 'linear-gradient(135deg,#22c55e,#4ade80)'
+          : d < 0 ? 'linear-gradient(135deg,#ef4444,#f87171)'
+          : 'linear-gradient(135deg,#a855f7,#ec4899)';
+        diffEl.style.webkitBackgroundClip = 'text';
+        diffEl.style.webkitTextFillColor  = 'transparent';
+        diffEl.style.backgroundClip       = 'text';
+      } else {
+        diffEl.textContent = '—';
+      }
+
+      $('spy-history-msg').textContent = msg.is_new
+        ? 'Primeira verificacao salva! Volte amanha para ver mudancas.'
+        : `Comparado com ${msg.prev_followers?.toLocaleString('pt-BR')} seguidores anteriores`;
+
+      $('spy-result').style.display = 'block';
+    }
+
+    if (msg.action === 'error' && $('spy-status')?.style.display !== 'none') {
+      $('spy-status').style.display = 'none';
+      $('btn-spy').disabled = false;
+      $('spy-error').style.display = 'block';
+      $('spy-error').textContent = msg.text;
+    }
+  } catch (_) {}
 });
 
 $('spy-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') runSpy(); });
 $('btn-spy-refresh')?.addEventListener('click', runSpy);
 
-// ── Spy Followers Audit ──
+// ── Spy — auditoria de seguidores ─────────────────────────────────────────────
+
 async function runSpyFollowers() {
   const igTab = await getInstagramTab();
   if (!igTab) {
@@ -357,80 +397,84 @@ async function runSpyFollowers() {
     return;
   }
 
-  const input = $('spy-username');
+  const input    = $('spy-username');
   const username = input.value.trim().replace(/^@/, '');
   if (!username) { input.focus(); return; }
 
-  $('spy-fl-status').style.display = 'block';
-  $('spy-fl-result').style.display = 'none';
-  $('spy-fl-error').style.display  = 'none';
-  $('spy-fl-left-section').style.display = 'none';
+  $('spy-fl-status').style.display      = 'block';
+  $('spy-fl-result').style.display      = 'none';
+  $('spy-fl-error').style.display       = 'none';
+  $('spy-fl-left-section').style.display   = 'none';
   $('spy-fl-joined-section').style.display = 'none';
-  $('spy-fl-status-text').textContent = `Carregando seguidores de @${username}...`;
-  $('btn-spy-followers').disabled = true;
+  $('spy-fl-status-text').textContent   = `Carregando seguidores de @${username}...`;
+  $('btn-spy-followers').disabled       = true;
 
-  try {
-    await chrome.scripting.executeScript({ target: { tabId: igTab.id }, files: ['content.js'] });
-  } catch (_) {}
-
-  chrome.tabs.sendMessage(igTab.id, { action: 'spy_followers', username });
+  const ok = await sendToIg(igTab, { action: 'spy_followers', username });
+  if (!ok) {
+    $('spy-fl-status').style.display = 'none';
+    $('btn-spy-followers').disabled = false;
+    $('spy-fl-error').style.display = 'block';
+    $('spy-fl-error').textContent = 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
+  }
 }
 
 $('btn-spy-followers')?.addEventListener('click', runSpyFollowers);
 
-// Listener spy_followers_result
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === 'spy_fl_status') {
-    $('spy-fl-status-text').textContent = msg.text;
-  }
-
-  if (msg.action === 'spy_followers_result') {
-    $('spy-fl-status').style.display = 'none';
-    $('btn-spy-followers').disabled = false;
-
-    $('spy-fl-left-count').textContent  = msg.left?.length || 0;
-    $('spy-fl-joined-count').textContent = msg.joined?.length || 0;
-    $('spy-fl-msg').textContent = msg.is_new
-      ? `Primeiro snapshot salvo com ${(msg.total || 0).toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
-      : `Comparado com snapshot anterior (${(msg.prev_total || 0).toLocaleString('pt-BR')} seguidores)`;
-
-    $('spy-fl-result').style.display = 'block';
-
-    if (msg.left?.length > 0) {
-      $('spy-fl-left-section').style.display = 'block';
-      const leftList = $('spy-fl-left-list');
-      leftList.innerHTML = '';
-      msg.left.slice(0, 50).forEach(u => {
-        const a = document.createElement('a');
-        a.className = 'user-item';
-        a.href = `https://www.instagram.com/${u}/`;
-        a.target = '_blank';
-        a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-unfollower">Saiu</span></div>`;
-        leftList.appendChild(a);
-      });
+  try {
+    if (msg.action === 'spy_fl_status') {
+      const el = $('spy-fl-status-text');
+      if (el) el.textContent = msg.text;
     }
 
-    if (msg.joined?.length > 0) {
-      $('spy-fl-joined-section').style.display = 'block';
-      const joinedList = $('spy-fl-joined-list');
-      joinedList.innerHTML = '';
-      msg.joined.slice(0, 50).forEach(u => {
-        const a = document.createElement('a');
-        a.className = 'user-item';
-        a.href = `https://www.instagram.com/${u}/`;
-        a.target = '_blank';
-        a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-new">Novo</span></div>`;
-        joinedList.appendChild(a);
-      });
-    }
-  }
+    if (msg.action === 'spy_followers_result') {
+      $('spy-fl-status').style.display = 'none';
+      $('btn-spy-followers').disabled  = false;
 
-  if (msg.action === 'spy_fl_error') {
-    $('spy-fl-status').style.display = 'none';
-    $('btn-spy-followers').disabled = false;
-    $('spy-fl-error').style.display = 'block';
-    $('spy-fl-error').textContent = msg.text;
-  }
+      $('spy-fl-left-count').textContent   = msg.left?.length || 0;
+      $('spy-fl-joined-count').textContent = msg.joined?.length || 0;
+      $('spy-fl-msg').textContent = msg.is_new
+        ? `Primeiro snapshot salvo com ${(msg.total || 0).toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
+        : `Comparado com snapshot anterior (${(msg.prev_total || 0).toLocaleString('pt-BR')} seguidores)`;
+
+      $('spy-fl-result').style.display = 'block';
+
+      if (msg.left?.length > 0) {
+        $('spy-fl-left-section').style.display = 'block';
+        const leftList = $('spy-fl-left-list');
+        leftList.innerHTML = '';
+        msg.left.slice(0, 50).forEach(u => {
+          const a = document.createElement('a');
+          a.className = 'user-item';
+          a.href = `https://www.instagram.com/${u}/`;
+          a.target = '_blank';
+          a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-unfollower">Saiu</span></div>`;
+          leftList.appendChild(a);
+        });
+      }
+
+      if (msg.joined?.length > 0) {
+        $('spy-fl-joined-section').style.display = 'block';
+        const joinedList = $('spy-fl-joined-list');
+        joinedList.innerHTML = '';
+        msg.joined.slice(0, 50).forEach(u => {
+          const a = document.createElement('a');
+          a.className = 'user-item';
+          a.href = `https://www.instagram.com/${u}/`;
+          a.target = '_blank';
+          a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-new">Novo</span></div>`;
+          joinedList.appendChild(a);
+        });
+      }
+    }
+
+    if (msg.action === 'spy_fl_error') {
+      $('spy-fl-status').style.display = 'none';
+      $('btn-spy-followers').disabled  = false;
+      $('spy-fl-error').style.display  = 'block';
+      $('spy-fl-error').textContent    = msg.text;
+    }
+  } catch (_) {}
 });
 
 init();
