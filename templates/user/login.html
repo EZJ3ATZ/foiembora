@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Entrar — FoiEmbora</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#09090b;color:#f4f4f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+    .card{background:#18181c;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;width:100%;max-width:420px}
+    .logo{display:flex;align-items:center;gap:0.6rem;font-weight:800;font-size:1.2rem;justify-content:center;margin-bottom:2rem;text-decoration:none;color:#f4f4f5}
+    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+    h1{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:0.5rem}
+    .sub{font-size:0.875rem;color:#71717a;text-align:center;margin-bottom:1.75rem;line-height:1.6}
+    label{font-size:0.8rem;color:#a1a1aa;display:block;margin-bottom:0.4rem}
+    input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.75rem 1rem;color:#f4f4f5;font-size:0.9rem;font-family:monospace;outline:none;transition:border-color 0.2s}
+    input:focus{border-color:rgba(168,85,247,0.5)}
+    .btn{display:block;width:100%;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;padding:0.875rem;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:1.25rem}
+    .hint{font-size:0.75rem;color:#52525b;text-align:center;margin-top:1.25rem;line-height:1.6}
+    .hint a{color:#a855f7;text-decoration:none}
+    .flash{padding:0.75rem 1rem;border-radius:10px;font-size:0.82rem;margin-bottom:1.25rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#f87171}
+  </style>
+</head>
+<body>
+<div class="card">
+  <a href="/" class="logo">
+    <div class="logo-icon">👻</div>
+    FoiEmbora
+  </a>
+  <h1>Acessar minha conta</h1>
+  <p class="sub">Digite o token de acesso que você recebeu por e-mail após o pagamento.</p>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div class="flash">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST">
+    <label>Seu token de acesso</label>
+    <input type="text" name="token" placeholder="Cole seu token aqui..." autocomplete="off" required/>
+    <button class="btn" type="submit">Entrar →</button>
+  </form>
+
+  <p class="hint">
+    Ainda não tem acesso? <a href="/#planos">Ver planos</a><br/>
+    Perdeu o token? Entre em contato pelo Instagram.
+  </p>
+</div>
+</body>
+</html>

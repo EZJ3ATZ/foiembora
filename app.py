@@ -496,6 +496,62 @@ def snapshot_history():
 
     return jsonify({'ok': True, 'history': history})
 
+# ─── USER LOGIN / DASHBOARD ─────────────────────────────────────────────────
+@app.route('/entrar', methods=['GET', 'POST'])
+def user_login():
+    if request.method == 'POST':
+        token_str = request.form.get('token', '').strip()
+        t = AccessToken.query.filter_by(token=token_str).first()
+        if not t or not t.is_valid:
+            flash('Token inválido ou expirado.', 'error')
+            return redirect(url_for('user_login'))
+        session['user_token'] = token_str
+        return redirect(url_for('minha_conta'))
+    return render_template('user/login.html')
+
+@app.route('/sair-usuario')
+def user_logout():
+    session.pop('user_token', None)
+    return redirect(url_for('index'))
+
+@app.route('/minha-conta')
+def minha_conta():
+    import json as _json
+    token_str = session.get('user_token')
+    if not token_str:
+        return redirect(url_for('user_login'))
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        session.pop('user_token', None)
+        return redirect(url_for('user_login'))
+
+    # Snapshots e diff de unfollowers
+    snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()
+    history = []
+    for i, s in enumerate(snaps):
+        followers_now  = set(_json.loads(s.followers))
+        following_now  = set(_json.loads(s.following))
+        unfollowers = []
+        new_followers = []
+        if i < len(snaps) - 1:
+            prev = snaps[i + 1]
+            followers_prev = set(_json.loads(prev.followers))
+            unfollowers   = sorted(followers_prev - followers_now)
+            new_followers = sorted(followers_now  - followers_prev)
+        history.append({
+            'date':         s.created_at.strftime('%d/%m/%Y %H:%M'),
+            'followers':    len(followers_now),
+            'following':    len(following_now),
+            'unfollowers':  unfollowers,
+            'new_followers': new_followers,
+        })
+
+    return render_template('user/dashboard.html',
+        token=t,
+        history=history,
+        latest=history[0] if history else None,
+    )
+
 # ─── STATIC ─────────────────────────────────────────────────────────────────
 @app.route('/static/<path:filename>')
 def static_files(filename):
