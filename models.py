@@ -146,6 +146,18 @@ class Config(db.Model):
             db.session.add(cls(key=key, value=value))
 
 
+class FollowerSnapshot(db.Model):
+    """Histórico de seguidores para detectar quem parou de seguir — plano trimestral."""
+    __tablename__ = 'follower_snapshots'
+    id          = db.Column(db.Integer, primary_key=True)
+    token_id    = db.Column(db.Integer, db.ForeignKey('access_tokens.id'), nullable=False)
+    followers   = db.Column(db.Text, nullable=False)   # JSON list of usernames
+    following   = db.Column(db.Text, nullable=False)   # JSON list of usernames
+    created_at  = db.Column(db.DateTime(timezone=True), default=now)
+
+    token = db.relationship('AccessToken', backref=db.backref('snapshots', lazy='dynamic'))
+
+
 class Commission(db.Model):
     __tablename__ = 'commissions'
     id          = db.Column(db.Integer, primary_key=True)
