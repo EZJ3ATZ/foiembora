@@ -674,6 +674,17 @@ def spy_update():
     })
 
 # ─── API EXTENSÃO ────────────────────────────────────────────────────────────
+@app.route('/api/me')
+def api_me():
+    """Retorna o token do usuário logado via sessão do site (usado pela extensão para auto-login)."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'ok': False, 'error': 'not_logged_in'}), 401
+    token = AccessToken.query.filter_by(user_id=user.id, is_valid=True).order_by(AccessToken.created_at.desc()).first()
+    if not token:
+        return jsonify({'ok': False, 'error': 'no_token'}), 403
+    return jsonify({'ok': True, 'token': token.token, 'plan': token.plan})
+
 @app.route('/api/token/validate')
 def token_validate():
     token = request.args.get('token','')
