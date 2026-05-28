@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Como funciona — FoiEmbora</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #09090b;
+    --card: #18181c;
+    --border: rgba(255,255,255,0.08);
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #52525b;
+    --grad: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem 1rem 4rem; }
+
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2.5rem; text-decoration: none; }
+  .logo img { width: 36px; height: 36px; border-radius: 10px; }
+  .logo span { font-size: 1.2rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .header { text-align: center; margin-bottom: 3rem; }
+  .header .badge { display: inline-block; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #a855f7; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; margin-bottom: 1rem; }
+  .header h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 900; line-height: 1.15; margin-bottom: 0.75rem; }
+  .header h1 span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header p { color: var(--muted); font-size: 1rem; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+  /* Steps */
+  .steps { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2.5rem; }
+
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; display: flex; gap: 1.25rem; align-items: flex-start; transition: border-color 0.2s; }
+  .step:hover { border-color: rgba(168,85,247,0.3); }
+
+  .step-num { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .step-num.purple { background: rgba(168,85,247,0.15); }
+  .step-num.pink   { background: rgba(236,72,153,0.15); }
+  .step-num.orange { background: rgba(249,115,22,0.15); }
+  .step-num.green  { background: rgba(34,197,94,0.15); }
+
+  .step-body { flex: 1; }
+  .step-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+  .step-title { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+  .step-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.6; margin-bottom: 0.75rem; }
+
+  .step-sub { display: flex; flex-direction: column; gap: 6px; }
+  .step-sub-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: var(--muted); }
+  .step-sub-item::before { content: '→'; color: #a855f7; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  .step-tag { display: inline-block; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2); color: #a855f7; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; margin-top: 6px; }
+  .step-tag.red   { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
+  .step-tag.green { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.2); color: #4ade80; }
+  .step-tag.orange { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); color: #fb923c; }
+
+  /* CTA */
+  .cta-box { width: 100%; max-width: 700px; background: linear-gradient(135deg,rgba(131,58,180,0.15),rgba(253,29,29,0.1),rgba(252,176,69,0.1)); border: 1px solid rgba(168,85,247,0.25); border-radius: 20px; padding: 2rem; text-align: center; }
+  .cta-box h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+  .cta-box p { font-size: 0.875rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+
+  .btn-start { display: inline-block; background: var(--grad); color: #fff; font-size: 1rem; font-weight: 800; padding: 14px 40px; border-radius: 14px; border: none; cursor: pointer; text-decoration: none; transition: opacity 0.2s, transform 0.15s; }
+  .btn-start:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .skip { display: block; margin-top: 1rem; font-size: 0.8rem; color: var(--dim); cursor: pointer; text-decoration: underline; }
+  .skip:hover { color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .step { flex-direction: column; gap: 0.75rem; }
+    .step-num { width: 38px; height: 38px; font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<a href="/" class="logo">
+  <img src="/static/icon.png" onerror="this.style.display='none'" />
+  <span>FoiEmbora</span>
+</a>
+
+<div class="header">
+  <div class="badge">✨ Bem-vindo ao FoiEmbora</div>
+  <h1>Tudo que você precisa<br/>saber em <span>4 passos</span></h1>
+  <p>Veja como funciona cada recurso da plataforma antes de começar.</p>
+</div>
+
+<div class="steps">
+
+  <!-- Passo 1: Extensão -->
+  <div class="step">
+    <div class="step-num purple">🔌</div>
+    <div class="step-body">
+      <div class="step-label">Passo 1</div>
+      <div class="step-title">Instale a extensão no Chrome</div>
+      <div class="step-desc">A extensão usa sua sessão do Instagram para analisar dados — sem precisar da sua senha e sem risco de ban.</div>
+      <div class="step-sub">
+        <div class="step-sub-item">Acesse a aba <strong>Token / Extensão</strong> na sua conta</div>
+        <div class="step-sub-item">Baixe o arquivo ZIP e extraia em uma pasta</div>
+        <div class="step-sub-item">No Chrome: <code style="background:#0a0a0f;padding:1px 5px;border-radius:4px;font-size:0.75rem">chrome://extensions</code> → Modo desenvolvedor → Carregar sem compactação</div>
+        <div class="step-sub-item">Cole seu token de acesso na extensão quando solicitado</div>
+      </div>
+      <span class="step-tag">Necessário para usar o site</span>
+    </div>
+  </div>
+
+  <!-- Passo 2: Meu Instagram -->
+  <div class="step">
+    <div class="step-num pink">📊</div>
+    <div class="step-body">
+      <div class="step-label">Passo 2</div>
+      <div class="step-title">Monitore o seu próprio Instagram</div>
+      <div class="step-desc">Veja quem parou de te seguir e quem te seguiu desde a última vez que você analisou.</div>
+      <div class="step-sub">
+        <div class="step-sub-item">Abra o Instagram no Chrome e faça login</div>
+        <div class="step-sub-item">Clique no ícone da extensão → aba <strong>"Minha conta"</strong></div>
+        <div class="step-sub-item">Clique <strong>Analisar</strong> — aguarde alguns segundos</div>
+        <div class="step-sub-item">Os resultados aparecem na aba <strong>Meu Instagram</strong> do site</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <span class="step-tag red">Quem saiu</span>
+        <span class="step-tag green">Quem chegou</span>
+        <span class="step-tag">Não te segue de volta</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Passo 3: Espionar -->
+  <div class="step">
+    <div class="step-num orange">🕵️</div>
+    <div class="step-body">
+      <div class="step-label">Passo 3</div>
+      <div class="step-title">Espione qualquer perfil público</div>
+      <div class="step-desc">Rastreie os seguidores de qualquer pessoa pública. A cada nova auditoria, você vê quem chegou e quem saiu desde a última vez.</div>
+      <div class="step-sub">
+        <div class="step-sub-item">Acesse a aba <strong>Espionar perfis</strong> na sua conta</div>
+        <div class="step-sub-item">Adicione o @ da pessoa que quer rastrear</div>
+        <div class="step-sub-item">Abra o Instagram, clique na extensão → <strong>"Espionar perfil"</strong></div>
+        <div class="step-sub-item">Os dados são salvos e comparados a cada nova análise</div>
+      </div>
+      <span class="step-tag orange">Funciona em perfis públicos</span>
+    </div>
+  </div>
+
+  <!-- Passo 4: Dados -->
+  <div class="step">
+    <div class="step-num green">🔒</div>
+    <div class="step-body">
+      <div class="step-label">Passo 4</div>
+      <div class="step-title">Seus dados são protegidos</div>
+      <div class="step-desc">Nunca pedimos sua senha do Instagram. Todos os dados coletados ficam no nosso servidor e são associados à sua conta.</div>
+      <div class="step-sub">
+        <div class="step-sub-item">Nenhuma senha do Instagram é armazenada</div>
+        <div class="step-sub-item">Dados de rastreio ficam disponíveis durante a assinatura</div>
+        <div class="step-sub-item">Se a assinatura expirar e não for renovada, <strong>todos os dados são deletados automaticamente</strong></div>
+        <div class="step-sub-item">Você pode solicitar exclusão a qualquer momento pelo suporte</div>
+      </div>
+      <span class="step-tag green">Sem senha · Sem risco de ban</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- CTA Final -->
+<div class="cta-box">
+  <h3>Pronto para começar? 🚀</h3>
+  <p>Agora que você sabe como funciona, acesse sua conta e instale a extensão para começar a rastrear.</p>
+  <form action="/bem-vindo/concluir" method="POST">
+    <button type="submit" class="btn-start">Ir para minha conta →</button>
+  </form>
+  <a href="/bem-vindo/concluir" class="skip">Pular introdução</a>
+</div>
+
+</body>
+</html>
