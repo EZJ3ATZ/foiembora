@@ -304,11 +304,14 @@ def seller_dashboard():
 # ─── API PAGAMENTO ───────────────────────────────────────────────────────────
 @app.route('/api/checkout', methods=['POST'])
 def checkout():
-    data  = request.json or {}
-    email = data.get('email','').strip().lower()
-    plan  = data.get('plan','avulso')
+    data     = request.json or {}
+    email    = data.get('email','').strip().lower()
+    plan     = data.get('plan','avulso')
+    password = data.get('password','').strip()
     if not email or '@' not in email:
         return jsonify({'error': 'Email inválido'}), 400
+    if not password or len(password) < 6:
+        return jsonify({'error': 'Senha deve ter ao menos 6 caracteres'}), 400
 
     amount = 10.00 if plan == 'avulso' else 29.90
     ref    = data.get('ref') or session.get('ref')
@@ -318,7 +321,8 @@ def checkout():
         seller = Seller.query.filter_by(referral_code=ref).first() if ref else None
         user = User(email=email, seller_id=seller.id if seller else None)
         db.session.add(user)
-        db.session.flush()
+    user.set_password(password)
+    db.session.flush()
 
     sub = Subscription(user_id=user.id, plan=plan, amount=amount,
                        seller_id=user.seller_id, status='pending')
@@ -560,30 +564,32 @@ def snapshot_history():
 @app.route('/entrar', methods=['GET', 'POST'])
 def user_login():
     if request.method == 'POST':
-        token_str = request.form.get('token', '').strip()
-        t = AccessToken.query.filter_by(token=token_str).first()
-        if not t or not t.is_valid:
-            flash('Token inválido ou expirado.', 'error')
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
+            flash('Email ou senha incorretos.', 'error')
             return redirect(url_for('user_login'))
-        session['user_token'] = token_str
+        session['user_email'] = email
         return redirect(url_for('minha_conta'))
     return render_template('user/login.html')
 
 @app.route('/sair-usuario')
 def user_logout():
-    session.pop('user_token', None)
+    session.pop('user_email', None)
     return redirect(url_for('index'))
 
 @app.route('/minha-conta')
 def minha_conta():
     import json as _json
-    token_str = session.get('user_token')
-    if not token_str:
+    email = session.get('user_email')
+    if not email:
         return redirect(url_for('user_login'))
-    t = AccessToken.query.filter_by(token=token_str).first()
-    if not t or not t.is_valid:
-        session.pop('user_token', None)
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        session.pop('user_email', None)
         return redirect(url_for('user_login'))
+    t = user.tokens.order_by(AccessToken.created_at.desc()).first()
 
     # Snapshots e diff de unfollowers
     snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()

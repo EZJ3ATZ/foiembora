@@ -1592,13 +1592,17 @@
         <div class="modal-price-value grad-text">R$10,00</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Seu e-mail (para receber o código)</label>
+        <label class="form-label">Seu e-mail</label>
         <input type="email" id="avulso-email" class="form-input" placeholder="seuemail@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Crie uma senha <span style="color:var(--dim);font-weight:400">(mín. 6 caracteres)</span></label>
+        <input type="password" id="avulso-senha" class="form-input" placeholder="Vai usar para acessar sua conta" />
+        <div style="font-size:0.72rem;color:var(--dim);margin-top:0.25rem">Use para entrar em <strong style="color:var(--muted)">foiembora.up.railway.app/entrar</strong></div>
       </div>
       <div class="form-group">
         <label class="form-label">Código de indicação <span style="color:var(--dim);font-weight:400">(opcional)</span></label>
         <input type="text" id="avulso-ref" class="form-input" placeholder="Ex: ABC12345" style="text-transform:uppercase" />
-        <div style="font-size:0.72rem;color:var(--dim);margin-top:0.25rem">Se alguém te indicou, coloque o código dela aqui</div>
       </div>
       <div class="pix-section">
         <div class="pix-icon">⚡</div>
@@ -1637,6 +1641,11 @@
       <div class="form-group">
         <label class="form-label">Seu e-mail</label>
         <input type="email" id="trim-email" class="form-input" placeholder="seuemail@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Crie uma senha <span style="color:var(--dim);font-weight:400">(mín. 6 caracteres)</span></label>
+        <input type="password" id="trim-senha" class="form-input" placeholder="Vai usar para acessar sua conta" />
+        <div style="font-size:0.72rem;color:var(--dim);margin-top:0.25rem">Use para entrar em <strong style="color:var(--muted)">foiembora.up.railway.app/entrar</strong></div>
       </div>
       <div class="form-group">
         <label class="form-label">Código de indicação <span style="color:var(--dim);font-weight:400">(opcional)</span></label>
@@ -1709,14 +1718,16 @@
 
   async function handleAvulso() {
     const email = document.getElementById('avulso-email').value.trim();
+    const senha = document.getElementById('avulso-senha').value.trim();
     const ref   = document.getElementById('avulso-ref').value.trim().toUpperCase();
     if (!email || !email.includes('@')) { alert('Digite um e-mail válido.'); return; }
+    if (!senha || senha.length < 6) { alert('Crie uma senha com pelo menos 6 caracteres.'); return; }
     const btn = document.getElementById('avulso-btn');
     btn.disabled = true; btn.textContent = 'Gerando PIX...';
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email, plan:'avulso', ref: ref || null})
+        body: JSON.stringify({email, password: senha, plan:'avulso', ref: ref || null})
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
@@ -1738,14 +1749,16 @@
 
   async function handleSemestral() {
     const email = document.getElementById('trim-email').value.trim();
+    const senha = document.getElementById('trim-senha').value.trim();
     const ref   = document.getElementById('trim-ref').value.trim().toUpperCase();
     if (!email || !email.includes('@')) { alert('Digite um e-mail válido.'); return; }
+    if (!senha || senha.length < 6) { alert('Crie uma senha com pelo menos 6 caracteres.'); return; }
     const btn = document.getElementById('trim-btn');
     btn.disabled = true; btn.textContent = 'Gerando PIX...';
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email, plan:'trimestral', ref: ref || null})
+        body: JSON.stringify({email, password: senha, plan:'trimestral', ref: ref || null})
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);

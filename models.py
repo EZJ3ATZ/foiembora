@@ -66,13 +66,17 @@ class Seller(UserMixin, db.Model):
 
 class User(db.Model):
     __tablename__ = 'users'
-    id          = db.Column(db.Integer, primary_key=True)
-    email       = db.Column(db.String(255), unique=True, nullable=False)
-    seller_id   = db.Column(db.Integer, db.ForeignKey('sellers.id'), nullable=True)
-    created_at  = db.Column(db.DateTime(timezone=True), default=now)
+    id            = db.Column(db.Integer, primary_key=True)
+    email         = db.Column(db.String(255), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    seller_id     = db.Column(db.Integer, db.ForeignKey('sellers.id'), nullable=True)
+    created_at    = db.Column(db.DateTime(timezone=True), default=now)
 
     subscriptions = db.relationship('Subscription', backref='user', lazy='dynamic')
     tokens        = db.relationship('AccessToken', backref='user', lazy='dynamic')
+
+    def set_password(self, pw): self.password_hash = generate_password_hash(pw)
+    def check_password(self, pw): return self.password_hash and check_password_hash(self.password_hash, pw)
 
     @property
     def active_subscription(self):
