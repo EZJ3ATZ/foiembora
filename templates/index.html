@@ -1084,50 +1084,107 @@
 </section>
 
 <!-- FEATURES -->
-<section style="background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+<section style="background:var(--bg);border-top:1px solid var(--border);padding:5rem 1.5rem">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header center">
       <div class="section-label">Funcionalidades</div>
-      <h2 class="section-title">O que você descobre</h2>
-      <p class="section-sub">Tudo que você precisa para gerenciar sua presença no Instagram com inteligência.</p>
+      <h2 class="section-title">Tudo que o Instagram<br/>esconde de você</h2>
+      <p class="section-sub">De uma checagem rápida a monitoramento completo — escolha o que você precisa.</p>
     </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <div class="feature-title">Quem não te segue de volta</div>
-        <div class="feature-desc">Lista completa de todos os perfis que você segue, mas que não te seguem de volta.</div>
-        <span class="feature-tag tag-free">Avulso R$10</span>
+
+    <!-- HERO FEATURE — MONITORAR PERFIL -->
+    <div style="background:linear-gradient(135deg,rgba(131,58,180,0.12),rgba(253,29,29,0.08),rgba(252,176,69,0.06));border:1px solid rgba(168,85,247,0.35);border-radius:20px;padding:2.5rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:center">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.35);color:var(--purple);padding:4px 14px;border-radius:999px;font-size:0.75rem;font-weight:700;margin-bottom:1rem;letter-spacing:0.04em">⭐ FUNÇÃO PRINCIPAL · TRIMESTRAL</div>
+        <h3 style="font-size:1.75rem;font-weight:900;line-height:1.15;margin-bottom:0.75rem">Monitore qualquer<br/>perfil do Instagram</h3>
+        <p style="font-size:0.9rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">Digite o @ de qualquer conta pública — sua, de um concorrente, de uma marca — e veja em tempo real: seguidores, seguindo, quem entrou, quem saiu e a evolução ao longo dos 3 meses.</p>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.5rem">
+          <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem"><span style="color:var(--purple);font-weight:700">✓</span> Seguidores e seguindo em tempo real</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem"><span style="color:var(--purple);font-weight:700">✓</span> Novos seguidores desde a última verificação</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem"><span style="color:var(--purple);font-weight:700">✓</span> Quem deixou de seguir e quando</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem"><span style="color:var(--purple);font-weight:700">✓</span> Histórico salvo por 3 meses</div>
+        </div>
+        <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.8rem 1.75rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;box-shadow:0 4px 24px rgba(168,85,247,0.3)">Assinar Trimestral — R$29,90 →</button>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🤝</div>
-        <div class="feature-title">Seguidores mútuos</div>
-        <div class="feature-desc">Veja quem realmente te segue de volta — seus seguidores genuínos.</div>
-        <span class="feature-tag tag-free">Avulso R$10</span>
+      <!-- Mini demo do monitor -->
+      <div style="background:var(--card);border:1px solid var(--border-bright);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+        <div style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);padding:0.75rem 1rem;display:flex;align-items:center;gap:0.5rem">
+          <span style="font-size:0.9rem;font-weight:800;color:#fff">👻 FoiEmbora</span>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.7);margin-left:auto">Monitor ativo</span>
+        </div>
+        <div style="padding:1rem">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border)">
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#833ab4,#fcb045);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff">M</div>
+            <div>
+              <div style="font-size:0.85rem;font-weight:700">@seuusuario</div>
+              <div style="font-size:0.72rem;color:var(--muted)">12.483 seguidores · 847 seguindo</div>
+            </div>
+            <div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.5)"></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+            <div style="flex:1;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:#22c55e">+14</div>
+              <div style="font-size:0.65rem;color:var(--dim)">novos</div>
+            </div>
+            <div style="flex:1;background:rgba(253,29,29,0.08);border:1px solid rgba(253,29,29,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:#fd6b6b">-8</div>
+              <div style="font-size:0.65rem;color:var(--dim)">saíram</div>
+            </div>
+            <div style="flex:1;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:0.5rem;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--purple)">47</div>
+              <div style="font-size:0.65rem;color:var(--dim)">não seguem</div>
+            </div>
+          </div>
+          <div style="font-size:0.72rem;color:var(--dim);text-align:center">Atualizado há 2 minutos</div>
+        </div>
       </div>
-      <div class="feature-card" style="border-color:rgba(168,85,247,0.3);background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(253,29,29,0.05))">
-        <div class="feature-icon">👻</div>
-        <div class="feature-title">Quem parou de te seguir</div>
-        <div class="feature-desc">Compara sua lista de seguidores com a verificação anterior e mostra exatamente quem te abandonou desde então.</div>
-        <span class="feature-tag tag-semestral" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(253,29,29,0.1));color:var(--purple);border-color:rgba(168,85,247,0.4)">✨ Trimestral</span>
+    </div>
+
+    <!-- FEATURES GRID -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">👥</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Quem não te segue de volta</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Lista completa de quem você segue mas não te segue de volta. Resultado em segundos.</div>
+        <span style="font-size:0.72rem;background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.25);padding:3px 10px;border-radius:999px;font-weight:700">✓ Avulso R$10</span>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📉</div>
-        <div class="feature-title">Histórico de saídas</div>
-        <div class="feature-desc">Veja quem parou de te seguir ao longo do tempo. Correlacione com seus posts para entender o que afasta seguidores.</div>
-        <span class="feature-tag tag-semestral">Trimestral</span>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">🤝</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Seguidores mútuos</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Veja quem realmente te segue de volta — seus seguidores genuínos e engajados.</div>
+        <span style="font-size:0.72rem;background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.25);padding:3px 10px;border-radius:999px;font-weight:700">✓ Avulso R$10</span>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <div class="feature-title">Evolução de seguidores</div>
-        <div class="feature-desc">Gráfico do crescimento da sua base ao longo do tempo — ganhos e perdas por período.</div>
-        <span class="feature-tag tag-semestral">Trimestral</span>
+
+      <div style="background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(253,29,29,0.05));border:1px solid rgba(168,85,247,0.25);border-radius:14px;padding:1.5rem">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">👻</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Quem parou de te seguir</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Compara verificações e mostra exatamente quem te abandonou e em qual data.</div>
+        <span style="font-size:0.72rem;background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.3);padding:3px 10px;border-radius:999px;font-weight:700">✨ Trimestral</span>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <div class="feature-title">Relatório exportável</div>
-        <div class="feature-desc">Exporte sua lista em PDF ou planilha para analisar ou compartilhar com clientes. Ideal para agências.</div>
-        <span class="feature-tag tag-pro">Em breve</span>
+
+      <div style="background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(253,29,29,0.05));border:1px solid rgba(168,85,247,0.25);border-radius:14px;padding:1.5rem">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">📈</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Evolução de seguidores</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Gráfico completo de ganhos e perdas ao longo dos 3 meses do plano.</div>
+        <span style="font-size:0.72rem;background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.3);padding:3px 10px;border-radius:999px;font-weight:700">✨ Trimestral</span>
       </div>
+
+      <div style="background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(253,29,29,0.05));border:1px solid rgba(168,85,247,0.25);border-radius:14px;padding:1.5rem">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">🎯</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Monitorar qualquer conta</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Não só a sua — monitore concorrentes, influencers ou qualquer perfil público.</div>
+        <span style="font-size:0.72rem;background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.3);padding:3px 10px;border-radius:999px;font-weight:700">✨ Trimestral</span>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;opacity:0.6">
+        <div style="font-size:1.75rem;margin-bottom:0.75rem">📊</div>
+        <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.4rem">Relatório exportável</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem">Exporte sua lista em planilha. Ideal para agências e criadores de conteúdo.</div>
+        <span style="font-size:0.72rem;background:rgba(255,255,255,0.05);color:var(--dim);border:1px solid var(--border);padding:3px 10px;border-radius:999px;font-weight:700">Em breve</span>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1207,7 +1264,7 @@
         <div style="text-align:center;padding:1.5rem 1.25rem 1.5rem;background:linear-gradient(to top,rgba(9,9,11,1) 0%,rgba(9,9,11,0.85) 100%);margin-top:-5.5rem;position:relative;z-index:2">
           <div style="font-size:1.15rem;font-weight:800;margin-bottom:0.4rem">🔒 Ver os <span style="background:linear-gradient(135deg,#fd1d1d,#fcb045);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">8 perfis</span> que pararam de te seguir</div>
           <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1.1rem">Disponível no Plano Trimestral · Histórico de 3 meses</div>
-          <button onclick="openModalSemestral()" style="background:linear-gradient(135deg,#fd1d1d,#833ab4);border:none;color:#fff;padding:0.75rem 2rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;box-shadow:0 4px 20px rgba(253,29,29,0.3)">Assinar Trimestral — R$24,90</button>
+          <button onclick="openModalSemestral()" style="background:linear-gradient(135deg,#fd1d1d,#833ab4);border:none;color:#fff;padding:0.75rem 2rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;box-shadow:0 4px 20px rgba(253,29,29,0.3)">Assinar Trimestral — R$29,90</button>
         </div>
       </div>
 
@@ -1313,7 +1370,7 @@
           <div style="text-align:center;margin-top:1rem;padding:1.25rem;background:linear-gradient(to top,rgba(9,9,11,0.95) 0%,rgba(9,9,11,0.7) 100%);border-radius:12px;margin-top:-3.5rem;position:relative;z-index:2">
             <div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">🔒 Ver todos os <span id="mp-count" class="grad-text">42</span> seguidores recentes</div>
             <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Desbloqueie com o Plano Trimestral</div>
-            <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.7rem 1.75rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer">Assinar Trimestral — R$24,90</button>
+            <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.7rem 1.75rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer">Assinar Trimestral — R$29,90</button>
           </div>
         </div>
 
@@ -1574,7 +1631,7 @@
       <div class="modal-sub">3 meses completos com verificações ilimitadas e todos os recursos.</div>
       <div class="modal-price-row">
         <div class="modal-price-label">3 meses · tudo incluído</div>
-        <div class="modal-price-value grad-text">R$24,90</div>
+        <div class="modal-price-value grad-text">R$29,90</div>
       </div>
       <div class="form-group">
         <label class="form-label">Seu e-mail</label>
@@ -1584,7 +1641,7 @@
         <label class="form-label">Código de indicação <span style="color:var(--dim);font-weight:400">(opcional)</span></label>
         <input type="text" id="trim-ref" class="form-input" placeholder="Ex: ABC12345" style="text-transform:uppercase" />
       </div>
-      <button class="btn-full" id="trim-btn" onclick="handleSemestral()">Assinar por R$24,90 →</button>
+      <button class="btn-full" id="trim-btn" onclick="handleSemestral()">Assinar por R$29,90 →</button>
       <div class="modal-fine">Pagamento via PIX. Acesso liberado imediatamente após confirmação.</div>
     </div>
     <div id="trim-step2" style="display:none;text-align:center">
@@ -1621,7 +1678,7 @@
     ['avulso-step1','trim-step1'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
     ['avulso-step2','trim-step2'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
     const ab = document.getElementById('avulso-btn'); if(ab) { ab.disabled=false; ab.textContent='Gerar PIX — R$10,00'; }
-    const tb = document.getElementById('trim-btn'); if(tb) { tb.disabled=false; tb.textContent='Assinar por R$24,90 →'; }
+    const tb = document.getElementById('trim-btn'); if(tb) { tb.disabled=false; tb.textContent='Assinar por R$29,90 →'; }
   }
 
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -1703,7 +1760,7 @@
       startPolling('trim', trimPid);
     } catch(e) {
       alert('Erro ao gerar PIX: ' + e.message);
-      btn.disabled = false; btn.textContent = 'Assinar por R$24,90 →';
+      btn.disabled = false; btn.textContent = 'Assinar por R$29,90 →';
     }
   }
 
