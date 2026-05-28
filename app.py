@@ -690,6 +690,10 @@ def monitor_add():
     if not username or len(username) < 2:
         return jsonify({'error': 'Username inválido'}), 400
 
+    # Aceita contagens fornecidas pelo frontend (caso o servidor seja bloqueado pelo IG)
+    client_followers = data.get('followers')
+    client_following = data.get('following')
+
     limit = 20 if sub.plan == 'trimestral' else 3
     count = MonitoredProfile.query.filter_by(user_id=user.id).count()
     if count >= limit:
@@ -698,23 +702,41 @@ def monitor_add():
     if MonitoredProfile.query.filter_by(user_id=user.id, username=username).first():
         return jsonify({'error': 'Perfil já monitorado'}), 409
 
+    # Tenta buscar dados do Instagram (pode falhar em IPs de datacenter)
     info = _fetch_ig_counts(username)
-    if not info:
-        return jsonify({'error': 'Perfil não encontrado ou privado'}), 404
 
-    profile = MonitoredProfile(user_id=user.id, username=info['username'])
+    # Se o servidor falhou mas o frontend forneceu os dados, usa eles
+    if not info and client_followers is not None:
+        info = {
+            'username': username,
+            'followers': int(client_followers),
+            'following': int(client_following or 0),
+            'is_private': False
+        }
+
+    profile = MonitoredProfile(user_id=user.id, username=username)
     db.session.add(profile)
     db.session.flush()
 
-    snap = ProfileCountSnapshot(
-        profile_id=profile.id,
-        followers=info['followers'],
-        following=info['following'],
-        is_private=info['is_private']
-    )
-    db.session.add(snap)
+    has_data = bool(info)
+    if info:
+        snap = ProfileCountSnapshot(
+            profile_id=profile.id,
+            followers=info['followers'],
+            following=info['following'],
+            is_private=info.get('is_private', False)
+        )
+        db.session.add(snap)
+
     db.session.commit()
-    return jsonify({'ok': True, 'username': info['username'], 'followers': info['followers'], 'following': info['following']})
+    return jsonify({
+        'ok': True,
+        'username': username,
+        'followers': info['followers'] if info else 0,
+        'following': info['following'] if info else 0,
+        'has_data': has_data,
+        'message': None if has_data else 'Perfil adicionado! Instagram bloqueou a busca automática. Clique "Verificar" para tentar novamente.'
+    })
 
 @app.route('/api/monitor/list')
 def monitor_list():

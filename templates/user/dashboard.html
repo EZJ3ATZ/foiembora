@@ -353,6 +353,36 @@ function toggleHistory(username) {
   if (el) el.classList.toggle('open');
 }
 
+// ── Spy: busca dados do IG via proxy público (fallback quando servidor é bloqueado) ──
+async function fetchIGCountsClientSide(username) {
+  try {
+    // Tenta através do nosso servidor primeiro
+    const r = await fetch('/api/instagram/profile?username=' + encodeURIComponent(username));
+    const d = await r.json();
+    if (!d.error) return { followers: d.followers, following: d.following };
+  } catch(e) {}
+
+  // Fallback: tenta via allorigins.win (CORS proxy)
+  try {
+    const proxyUrl = 'https://api.allorigins.win/get?url=' +
+      encodeURIComponent('https://i.instagram.com/api/v1/users/web_profile_info/?username=' + username);
+    const pr = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+    if (pr.ok) {
+      const pd = await pr.json();
+      const igData = JSON.parse(pd.contents);
+      const u = igData?.data?.user;
+      if (u) {
+        return {
+          followers: u.edge_followed_by?.count || 0,
+          following: u.edge_follow?.count || 0
+        };
+      }
+    }
+  } catch(e) {}
+
+  return null;
+}
+
 // ── Spy: adicionar perfil ──
 async function adicionarPerfil() {
   const inp = document.getElementById('spy-input');
@@ -362,30 +392,44 @@ async function adicionarPerfil() {
   const loading = document.getElementById('spy-loading');
   const errEl   = document.getElementById('spy-error');
   loading.style.display = 'block';
+  loading.textContent   = 'Buscando @' + username + ' no Instagram...';
   errEl.style.display   = 'none';
 
   try {
+    // Tenta buscar dados do IG (servidor ou proxy)
+    const igData = await fetchIGCountsClientSide(username);
+
+    const payload = { username };
+    if (igData) {
+      payload.followers = igData.followers;
+      payload.following = igData.following;
+    }
+
     const r = await fetch('/api/monitor/add', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username})
+      body: JSON.stringify(payload)
     });
     const d = await r.json();
     loading.style.display = 'none';
 
     if (!d.ok) {
-      errEl.style.display   = 'block';
-      errEl.textContent     = '⚠️ ' + (d.error || 'Erro ao adicionar.');
+      errEl.style.display = 'block';
+      errEl.textContent   = '⚠️ ' + (d.error || 'Erro ao adicionar.');
       return;
     }
+
     inp.value = '';
-    // Remove empty state
     const emptyEl = document.getElementById('spy-empty');
     if (emptyEl) emptyEl.remove();
-    // Adiciona card
+
     const list = document.getElementById('spy-list');
     const colors = ['linear-gradient(135deg,#833ab4,#fd1d1d)','linear-gradient(135deg,#a855f7,#3b82f6)','linear-gradient(135deg,#22c55e,#0ea5e9)','linear-gradient(135deg,#f97316,#fd1d1d)','linear-gradient(135deg,#ec4899,#a855f7)'];
     const c = colors[d.username.charCodeAt(0) % colors.length];
+    const countsHtml = d.has_data
+      ? `<strong>${(d.followers||0).toLocaleString('pt-BR')}</strong> seguidores · <strong>${(d.following||0).toLocaleString('pt-BR')}</strong> seguindo`
+      : `<span style="color:var(--dim);font-size:0.78rem">Dados indisponíveis — clique Verificar</span>`;
+
     const card = document.createElement('div');
     card.className = 'profile-card';
     card.id = 'pcard-' + d.username;
@@ -394,7 +438,7 @@ async function adicionarPerfil() {
         <div class="profile-avatar" style="background:${c}">${d.username[0].toUpperCase()}</div>
         <div class="profile-info">
           <div class="profile-name">@${d.username}</div>
-          <div class="profile-counts"><strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo</div>
+          <div class="profile-counts">${countsHtml}</div>
         </div>
         <div class="profile-actions">
           <button class="btn-check" onclick="verificarAgora('${d.username}')">↻ Verificar</button>
@@ -402,13 +446,19 @@ async function adicionarPerfil() {
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
-        <span class="last-check">Adicionado agora</span>
+        <span class="last-check">${d.has_data ? 'Adicionado agora' : '⚠️ Sem dados ainda — clique Verificar'}</span>
       </div>`;
     list.prepend(card);
+
+    if (d.message) {
+      errEl.style.display = 'block';
+      errEl.style.color   = 'var(--orange)';
+      errEl.textContent   = '⚠️ ' + d.message;
+    }
   } catch(e) {
     loading.style.display = 'none';
-    errEl.style.display = 'block';
-    errEl.textContent = '⚠️ Erro de conexão. Tente novamente.';
+    errEl.style.display   = 'block';
+    errEl.textContent     = '⚠️ Erro de conexão. Tente novamente.';
   }
 }
 
