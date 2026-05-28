@@ -75,6 +75,11 @@ def index():
 def pitch():
     return send_file(os.path.join(os.path.dirname(__file__), 'pitch.html'))
 
+@app.route('/download/extensao')
+def download_extensao():
+    path = os.path.join(os.path.dirname(__file__), 'foiembora-extensao.zip')
+    return send_file(path, as_attachment=True, download_name='FoiEmbora-extensao.zip')
+
 # ─── AUTH ADMIN ─────────────────────────────────────────────────────────────
 @app.route('/admin/login', methods=['GET','POST'])
 def admin_login():
