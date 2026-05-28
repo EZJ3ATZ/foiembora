@@ -1012,8 +1012,22 @@ def user_login():
             flash('Email ou senha incorretos.', 'error')
             return redirect(url_for('user_login'))
         session['user_email'] = email
+        # Mostra onboarding na primeira vez (ou se nunca fechou)
+        if not session.get('onboarding_done'):
+            return redirect(url_for('bem_vindo'))
         return redirect(url_for('minha_conta'))
     return render_template('user/login.html')
+
+@app.route('/bem-vindo')
+def bem_vindo():
+    if not session.get('user_email'):
+        return redirect(url_for('user_login'))
+    return render_template('user/onboarding.html')
+
+@app.route('/bem-vindo/concluir', methods=['POST'])
+def bem_vindo_concluir():
+    session['onboarding_done'] = True
+    return redirect(url_for('minha_conta'))
 
 @app.route('/sair-usuario')
 def user_logout():
