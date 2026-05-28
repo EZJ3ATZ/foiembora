@@ -1625,15 +1625,14 @@
   }
 
   // ── MONITOR DEMO ──
-  const mockProfiles = {
-    default: { followers: '—', following: '—', count: 42, letter: '?' }
-  };
+  let monitorTimer = null;
 
   function monitorPreview(val) {
     const preview = document.getElementById('monitor-preview');
     const username = val.replace('@','').trim();
     if (username.length < 2) { preview.style.display = 'none'; return; }
 
+    // Mostra card imediatamente com avatar/letra enquanto busca
     preview.style.display = 'block';
     const letter = username[0].toUpperCase();
     const colors = ['#833ab4','#fd1d1d','#fcb045','#a855f7','#ec4899','#3b82f6'];
@@ -1641,11 +1640,33 @@
     document.getElementById('mp-avatar').style.background = `linear-gradient(135deg,${color},#fcb045)`;
     document.getElementById('mp-avatar').textContent = letter;
     document.getElementById('mp-username').textContent = '@' + username;
-    // Simula números baseados no username (demo)
-    const seed = username.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-    document.getElementById('mp-followers').textContent = ((seed * 37) % 9000 + 100).toLocaleString('pt-BR');
-    document.getElementById('mp-following').textContent = ((seed * 13) % 1500 + 50).toLocaleString('pt-BR');
-    document.getElementById('mp-count').textContent = (seed % 80) + 15;
+    document.getElementById('mp-followers').textContent = '…';
+    document.getElementById('mp-following').textContent = '…';
+
+    // Debounce: só busca 600ms depois de parar de digitar
+    clearTimeout(monitorTimer);
+    monitorTimer = setTimeout(() => fetchInstagramProfile(username), 600);
+  }
+
+  async function fetchInstagramProfile(username) {
+    try {
+      const r = await fetch(`/api/instagram/profile?username=${encodeURIComponent(username)}`);
+      const data = await r.json();
+      if (data.error) {
+        document.getElementById('mp-followers').textContent = '—';
+        document.getElementById('mp-following').textContent = '—';
+        return;
+      }
+      document.getElementById('mp-username').textContent = '@' + data.username;
+      document.getElementById('mp-followers').textContent = data.followers.toLocaleString('pt-BR');
+      document.getElementById('mp-following').textContent = data.following.toLocaleString('pt-BR');
+      // count do overlay: ~10% dos seguidores como novos recentes (demo)
+      const count = Math.max(3, Math.floor(data.followers * 0.03));
+      document.getElementById('mp-count').textContent = count;
+    } catch(e) {
+      document.getElementById('mp-followers').textContent = '—';
+      document.getElementById('mp-following').textContent = '—';
+    }
   }
 
   function triggerMonitor() {

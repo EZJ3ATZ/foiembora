@@ -1,4 +1,5 @@
 import os, json
+import requests as req_lib
 from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -79,6 +80,38 @@ def pitch():
 def download_extensao():
     path = os.path.join(os.path.dirname(__file__), 'foiembora-extensao.zip')
     return send_file(path, as_attachment=True, download_name='FoiEmbora-extensao.zip')
+
+# ─── INSTAGRAM PUBLIC PROFILE ───────────────────────────────────────────────
+@app.route('/api/instagram/profile')
+def instagram_profile():
+    username = request.args.get('username', '').strip().lower().lstrip('@')
+    if not username:
+        return jsonify({'error': 'Username required'}), 400
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 9; GM1903) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.89 Mobile Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8',
+            'x-ig-app-id': '936619743392459',
+            'Referer': 'https://www.instagram.com/',
+            'Origin': 'https://www.instagram.com',
+        }
+        url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
+        r = req_lib.get(url, headers=headers, timeout=8)
+        if r.status_code != 200:
+            return jsonify({'error': 'Perfil não encontrado ou conta privada'}), 404
+        data = r.json()
+        u = data['data']['user']
+        return jsonify({
+            'username':    u['username'],
+            'full_name':   u.get('full_name', ''),
+            'followers':   u['edge_followed_by']['count'],
+            'following':   u['edge_follow']['count'],
+            'is_private':  u.get('is_private', False),
+            'biography':   u.get('biography', ''),
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ─── AUTH ADMIN ─────────────────────────────────────────────────────────────
 @app.route('/admin/login', methods=['GET','POST'])
