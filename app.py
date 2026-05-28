@@ -621,6 +621,58 @@ def ig_preview(username):
         app.logger.warning(f'[preview] {username}: {e}')
         return jsonify({'ok': False, 'username': username})
 
+# ─── API SPY VIA SESSÃO (extensão envia contagem de perfis monitorados) ───────
+@app.route('/api/spy/update', methods=['POST'])
+def spy_update():
+    """Extensão envia contagem de seguidores de um perfil monitorado via sessão IG."""
+    import json as _json
+    data      = request.json or {}
+    token_str = data.get('token', '')
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        return jsonify({'ok': False, 'error': 'Token inválido'}), 401
+
+    username   = data.get('username', '').lower().strip().lstrip('@')
+    followers  = data.get('followers')
+    following  = data.get('following', 0)
+    is_private = bool(data.get('is_private', False))
+    profile_pic= data.get('profile_pic_url', '')
+    full_name  = data.get('full_name', '')
+
+    if not username or followers is None:
+        return jsonify({'ok': False, 'error': 'username e followers são obrigatórios'}), 400
+
+    # Busca ou cria MonitoredProfile para este usuário
+    mp = MonitoredProfile.query.filter_by(user_id=t.user_id, username=username).first()
+    if not mp:
+        mp = MonitoredProfile(user_id=t.user_id, username=username)
+        db.session.add(mp)
+        db.session.flush()
+
+    # Snapshot anterior para calcular diff
+    prev = mp.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).first()
+    prev_followers = prev.followers if prev else None
+
+    snap = ProfileCountSnapshot(
+        profile_id=mp.id,
+        followers=int(followers),
+        following=int(following),
+        is_private=is_private
+    )
+    db.session.add(snap)
+    db.session.commit()
+
+    diff = (int(followers) - prev_followers) if prev_followers is not None else None
+    return jsonify({
+        'ok': True,
+        'username': username,
+        'followers': int(followers),
+        'following': int(following),
+        'diff': diff,
+        'prev_followers': prev_followers,
+        'is_new': prev is None,
+    })
+
 # ─── API EXTENSÃO ────────────────────────────────────────────────────────────
 @app.route('/api/token/validate')
 def token_validate():
