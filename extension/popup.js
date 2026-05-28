@@ -1,22 +1,97 @@
 const $ = id => document.getElementById(id);
 
+const API_BASE = 'https://foiembora.up.railway.app';
+
+function showScreen(id) {
+  ['screen-token', 'screen-wrong', 'screen-main'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById(id);
+  if (target) target.style.display = 'block';
+}
+
+async function validateToken(token) {
+  try {
+    const res = await fetch(`${API_BASE}/api/token/validate?token=${encodeURIComponent(token)}`);
+    if (res.status === 401) return false;
+    const data = await res.json();
+    return data.valid === true;
+  } catch {
+    // Se offline, confia no token salvo por até 24h
+    return true;
+  }
+}
+
 async function getInstagramTab() {
   const tabs = await chrome.tabs.query({ url: 'https://www.instagram.com/*' });
   return tabs.length > 0 ? tabs[0] : null;
 }
 
 async function init() {
+  // 1. Verificar token salvo
+  const stored = await chrome.storage.local.get('access_token');
+  const savedToken = stored.access_token;
+
+  if (savedToken) {
+    const valid = await validateToken(savedToken);
+    if (!valid) {
+      await chrome.storage.local.remove('access_token');
+      showScreen('screen-token');
+      setupTokenScreen();
+      return;
+    }
+    // Token válido — mostrar tela principal
+    await setupMainScreen();
+    return;
+  }
+
+  // 2. Sem token — pedir código
+  showScreen('screen-token');
+  setupTokenScreen();
+}
+
+function setupTokenScreen() {
+  const btn = $('btn-validate');
+  const input = $('token-input');
+  const err = $('token-error');
+
+  btn.addEventListener('click', async () => {
+    const token = input.value.trim();
+    if (!token) return;
+    btn.disabled = true;
+    btn.textContent = 'Validando...';
+    err.style.display = 'none';
+
+    const valid = await validateToken(token);
+    if (valid) {
+      await chrome.storage.local.set({ access_token: token });
+      await setupMainScreen();
+    } else {
+      err.textContent = 'Código inválido ou expirado. Verifique e tente novamente.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Ativar acesso →';
+    }
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') btn.click();
+  });
+}
+
+async function setupMainScreen() {
   const igTab = await getInstagramTab();
 
   if (!igTab) {
-    $('screen-wrong').style.display = 'block';
+    showScreen('screen-wrong');
     $('btn-open-ig').addEventListener('click', () => {
       chrome.tabs.create({ url: 'https://www.instagram.com/' });
     });
     return;
   }
 
-  $('screen-main').style.display = 'block';
+  showScreen('screen-main');
 
   $('btn-analyze').addEventListener('click', async () => {
     $('btn-analyze').disabled = true;
@@ -28,7 +103,6 @@ async function init() {
     $('results-list').innerHTML = '';
     $('stats-row').style.display = 'none';
 
-    // Inject content script if needed then send message
     try {
       await chrome.scripting.executeScript({
         target: { tabId: igTab.id },
@@ -40,7 +114,7 @@ async function init() {
   });
 }
 
-// Listen for messages from content script
+// Listener para mensagens do content script
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action === 'status') {
     $('status-text').textContent = msg.text;
@@ -57,13 +131,11 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action === 'result') {
     $('status-box').classList.remove('visible');
 
-    // Stats
     $('stat-following').textContent = msg.totalFollowing;
     $('stat-followers').textContent = msg.totalFollowers;
     $('stat-notback').textContent = msg.notFollowingBack.length;
     $('stats-row').style.display = 'flex';
 
-    // Results list
     const list = msg.notFollowingBack;
     $('results-count').textContent = list.length;
     $('results-header').classList.add('visible');
@@ -82,7 +154,6 @@ chrome.runtime.onMessage.addListener((msg) => {
         img.className = 'user-avatar';
         img.referrerPolicy = 'no-referrer';
         img.crossOrigin = 'anonymous';
-        // Gera avatar de letra como fallback imediato
         const letter = (user.full_name || user.username || '?')[0].toUpperCase();
         const colors = ['#833ab4','#fd1d1d','#fcb045','#a855f7','#ec4899','#f97316'];
         const color = colors[letter.charCodeAt(0) % colors.length];
@@ -90,7 +161,6 @@ chrome.runtime.onMessage.addListener((msg) => {
         img.src = user.profile_pic_url || fallbackSvg;
         img.onerror = () => { img.src = fallbackSvg; };
 
-        // Nome: esconde full_name se for igual ao username
         const displayName = user.full_name && user.full_name.toLowerCase() !== user.username.toLowerCase()
           ? user.full_name : null;
 

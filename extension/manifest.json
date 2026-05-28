@@ -3,7 +3,7 @@
   "name": "FoiEmbora — Quem não te segue no Instagram",
   "version": "1.0.0",
   "description": "Descubra quem não te segue de volta no Instagram. Sem senha, sem risco.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
   "host_permissions": [
     "https://www.instagram.com/*",
     "https://*.cdninstagram.com/*",
