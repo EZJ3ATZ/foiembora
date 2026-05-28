@@ -3,7 +3,7 @@ from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
-from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, now, gen_token
+from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, FollowerSnapshot, now, gen_token
 
 load_dotenv()
 
@@ -385,6 +385,78 @@ def token_validate():
     if not t or not t.is_valid:
         return jsonify({'valid': False}), 401
     return jsonify({'valid': True, 'plan': t.plan, 'expires_at': t.expires_at.isoformat() if t.expires_at else None})
+
+@app.route('/api/snapshot', methods=['POST'])
+def snapshot_save():
+    """Salva snapshot de followers/following e retorna diff com snapshot anterior."""
+    import json as _json
+    data      = request.json or {}
+    token_str = data.get('token', '')
+    followers = data.get('followers', [])   # lista de usernames
+    following = data.get('following', [])   # lista de usernames
+
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        return jsonify({'error': 'Token inválido'}), 401
+    if t.plan != 'trimestral':
+        return jsonify({'error': 'Recurso exclusivo do plano Trimestral'}), 403
+
+    # Snapshot anterior (mais recente)
+    prev = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).first()
+
+    unfollowers = []
+    new_followers = []
+
+    if prev:
+        prev_followers = set(_json.loads(prev.followers))
+        curr_followers = set(followers)
+        unfollowers    = list(prev_followers - curr_followers)   # pararam de seguir
+        new_followers  = list(curr_followers - prev_followers)   # começaram a seguir
+        prev_date      = prev.created_at.strftime('%d/%m/%Y')
+    else:
+        prev_date = None
+
+    # Salva novo snapshot
+    snap = FollowerSnapshot(
+        token_id  = t.id,
+        followers = _json.dumps(followers),
+        following = _json.dumps(following)
+    )
+    db.session.add(snap)
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'unfollowers':    unfollowers,
+        'new_followers':  new_followers,
+        'prev_date':      prev_date,
+        'total_snapshots': t.snapshots.count()
+    })
+
+@app.route('/api/snapshot/history')
+def snapshot_history():
+    """Retorna histórico de contagens de seguidores do token."""
+    import json as _json
+    token_str = request.args.get('token', '')
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        return jsonify({'error': 'Token inválido'}), 401
+    if t.plan != 'trimestral':
+        return jsonify({'error': 'Recurso exclusivo do plano Trimestral'}), 403
+
+    snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()
+    history = [{
+        'date':      s.created_at.strftime('%d/%m/%Y %H:%M'),
+        'followers': len(_json.loads(s.followers)),
+        'following': len(_json.loads(s.following)),
+    } for s in snaps]
+
+    return jsonify({'ok': True, 'history': history})
+
+# ─── STATIC ─────────────────────────────────────────────────────────────────
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_file(os.path.join(os.path.dirname(__file__), 'static', filename))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050)

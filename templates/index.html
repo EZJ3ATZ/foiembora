@@ -879,7 +879,7 @@
 <!-- NAV -->
 <nav>
   <a href="#" class="logo">
-    <div class="logo-icon">🔍</div>
+    <img src="/static/logo_icon.png" alt="FoiEmbora" style="width:36px;height:36px;border-radius:8px;object-fit:contain;background:transparent">
     FoiEmbora
   </a>
   <div class="nav-links">
@@ -1104,29 +1104,150 @@
         <div class="feature-desc">Veja quem realmente te segue de volta — seus seguidores genuínos.</div>
         <span class="feature-tag tag-free">Avulso R$5</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" style="border-color:rgba(168,85,247,0.3);background:linear-gradient(135deg,rgba(168,85,247,0.07),rgba(253,29,29,0.05))">
         <div class="feature-icon">👻</div>
-        <div class="feature-title">Ghost followers</div>
-        <div class="feature-desc">Perfis que te seguem mas nunca curtiram ou comentaram nada. Seguidores fantasma que prejudicam seu engajamento.</div>
-        <span class="feature-tag tag-semestral">Semestral</span>
+        <div class="feature-title">Quem parou de te seguir</div>
+        <div class="feature-desc">Compara sua lista de seguidores com a verificação anterior e mostra exatamente quem te abandonou desde então.</div>
+        <span class="feature-tag tag-semestral" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(253,29,29,0.1));color:var(--purple);border-color:rgba(168,85,247,0.4)">✨ Trimestral</span>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📉</div>
         <div class="feature-title">Histórico de saídas</div>
-        <div class="feature-desc">Veja quem parou de te seguir e quando. Correlacione com seus posts para entender o que afasta seguidores.</div>
-        <span class="feature-tag tag-semestral">Semestral</span>
+        <div class="feature-desc">Veja quem parou de te seguir ao longo do tempo. Correlacione com seus posts para entender o que afasta seguidores.</div>
+        <span class="feature-tag tag-semestral">Trimestral</span>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔔</div>
-        <div class="feature-title">Alerta de unfollow</div>
-        <div class="feature-desc">Receba um e-mail semanal automático com todos que pararam de te seguir na semana.</div>
-        <span class="feature-tag tag-semestral">Semestral</span>
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Evolução de seguidores</div>
+        <div class="feature-desc">Gráfico do crescimento da sua base ao longo do tempo — ganhos e perdas por período.</div>
+        <span class="feature-tag tag-semestral">Trimestral</span>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📊</div>
         <div class="feature-title">Relatório exportável</div>
         <div class="feature-desc">Exporte sua lista em PDF ou planilha para analisar ou compartilhar com clientes. Ideal para agências.</div>
         <span class="feature-tag tag-pro">Em breve</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MONITORAR PERFIL -->
+<section id="monitorar" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:5rem 1.5rem">
+  <div class="container">
+    <div class="section-header center">
+      <div class="section-label">Exclusivo Trimestral</div>
+      <h2 class="section-title">Monitore qualquer perfil do Instagram</h2>
+      <p class="section-sub">Digite o @ de qualquer conta pública e veja quem seguiu, quem deixou de seguir e a evolução dos seguidores ao longo do tempo.</p>
+    </div>
+
+    <!-- DEMO INTERATIVA -->
+    <div style="max-width:680px;margin:0 auto">
+      <!-- Input -->
+      <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);border-radius:14px;padding:0.75rem 1rem;align-items:center">
+        <span style="font-size:1.2rem;flex-shrink:0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#ig-grad)" stroke-width="2"><defs><linearGradient id="ig-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#833ab4"/><stop offset="100%" stop-color="#fcb045"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </span>
+        <input id="monitor-input" type="text" placeholder="@username do perfil que deseja monitorar"
+          style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:0.95rem;font-family:inherit"
+          oninput="monitorPreview(this.value)"
+        />
+        <button onclick="triggerMonitor()" style="background:var(--grad);border:none;color:#fff;padding:0.55rem 1.25rem;border-radius:9px;font-weight:700;font-size:0.875rem;cursor:pointer;white-space:nowrap">
+          Monitorar →
+        </button>
+      </div>
+
+      <!-- PREVIEW CARD (aparece ao digitar) -->
+      <div id="monitor-preview" style="display:none;background:var(--card);border:1px solid var(--border-bright);border-radius:16px;overflow:hidden">
+        <!-- Profile header -->
+        <div style="padding:1.25rem;display:flex;align-items:center;gap:1rem;border-bottom:1px solid var(--border)">
+          <div id="mp-avatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#fff;flex-shrink:0">?</div>
+          <div style="flex:1">
+            <div id="mp-username" style="font-weight:700;font-size:1rem">@username</div>
+            <div style="display:flex;gap:1.25rem;margin-top:0.35rem">
+              <span style="font-size:0.8rem;color:var(--muted)"><strong id="mp-followers" style="color:var(--text)">—</strong> seguidores</span>
+              <span style="font-size:0.8rem;color:var(--muted)"><strong id="mp-following" style="color:var(--text)">—</strong> seguindo</span>
+            </div>
+          </div>
+          <span style="font-size:0.7rem;background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.3);padding:3px 10px;border-radius:999px;font-weight:700">MONITORADO</span>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid var(--border)">
+          <button class="mtab active" data-mtab="novos" onclick="switchMTab('novos')" style="flex:1;padding:0.75rem;background:transparent;border:none;color:var(--purple);font-size:0.82rem;font-weight:600;cursor:pointer;border-bottom:2px solid var(--purple)">🆕 Novos seguidores</button>
+          <button class="mtab" data-mtab="saidas" onclick="switchMTab('saidas')" style="flex:1;padding:0.75rem;background:transparent;border:none;color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent">👻 Deixaram de seguir</button>
+          <button class="mtab" data-mtab="historico" onclick="switchMTab('historico')" style="flex:1;padding:0.75rem;background:transparent;border:none;color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent">📈 Histórico</button>
+        </div>
+
+        <!-- Tab content -->
+        <div id="mtab-novos" style="padding:1rem">
+          <div style="display:flex;flex-direction:column;gap:0.6rem">
+            <!-- Mock users desfocados -->
+            <div style="display:flex;align-items:center;gap:10px;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.03);border-radius:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#833ab4,#ec4899);flex-shrink:0"></div>
+              <div style="flex:1;filter:blur(5px);user-select:none">
+                <div style="font-size:12px;font-weight:700;color:#f4f4f5">@usuario_exemplo1</div>
+                <div style="font-size:11px;color:#71717a">Nome do Usuário</div>
+              </div>
+              <div style="font-size:10px;color:var(--dim);filter:blur(4px)">há 2h</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.03);border-radius:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#a855f7);flex-shrink:0"></div>
+              <div style="flex:1;filter:blur(5px);user-select:none">
+                <div style="font-size:12px;font-weight:700;color:#f4f4f5">@usuario_exemplo2</div>
+                <div style="font-size:11px;color:#71717a">Outro Usuário</div>
+              </div>
+              <div style="font-size:10px;color:var(--dim);filter:blur(4px)">há 5h</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.03);border-radius:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);flex-shrink:0"></div>
+              <div style="flex:1;filter:blur(5px);user-select:none">
+                <div style="font-size:12px;font-weight:700;color:#f4f4f5">@usuario_exemplo3</div>
+                <div style="font-size:11px;color:#71717a">Mais Um</div>
+              </div>
+              <div style="font-size:10px;color:var(--dim);filter:blur(4px)">há 1d</div>
+            </div>
+          </div>
+          <!-- Unlock overlay -->
+          <div style="text-align:center;margin-top:1rem;padding:1.25rem;background:linear-gradient(to top,rgba(9,9,11,0.95) 0%,rgba(9,9,11,0.7) 100%);border-radius:12px;margin-top:-3.5rem;position:relative;z-index:2">
+            <div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">🔒 Ver todos os <span id="mp-count" class="grad-text">42</span> seguidores recentes</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Desbloqueie com o Plano Trimestral</div>
+            <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.7rem 1.75rem;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer">Assinar Trimestral — R$24,90</button>
+          </div>
+        </div>
+
+        <div id="mtab-saidas" style="display:none;padding:1.5rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:0.5rem">👻</div>
+          <div style="font-weight:700;margin-bottom:0.3rem">Quem deixou de seguir</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Veja quem unfollowou e quando — comparado com a última verificação</div>
+          <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.65rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer">🔒 Desbloquear</button>
+        </div>
+
+        <div id="mtab-historico" style="display:none;padding:1.5rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:0.5rem">📈</div>
+          <div style="font-weight:700;margin-bottom:0.3rem">Evolução dos seguidores</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Gráfico completo de ganhos e perdas ao longo dos 3 meses</div>
+          <button onclick="openModalSemestral()" style="background:var(--grad);border:none;color:#fff;padding:0.65rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer">🔒 Desbloquear</button>
+        </div>
+      </div>
+
+      <!-- Texto explicativo -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.75rem;text-align:center">
+        <div style="padding:1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:1.5rem;margin-bottom:0.4rem">👥</div>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Novos seguidores</div>
+          <div style="font-size:0.74rem;color:var(--dim)">Quem começou a seguir desde a última verificação</div>
+        </div>
+        <div style="padding:1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:1.5rem;margin-bottom:0.4rem">👻</div>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Quem saiu</div>
+          <div style="font-size:0.74rem;color:var(--dim)">Quem deixou de seguir e em qual data</div>
+        </div>
+        <div style="padding:1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:1.5rem;margin-bottom:0.4rem">📅</div>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">Histórico salvo</div>
+          <div style="font-size:0.74rem;color:var(--dim)">Cada verificação fica salva na sua conta por 3 meses</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1501,6 +1622,48 @@
   function copyPix(prefix) {
     const code = document.getElementById(prefix + '-pix-code').textContent;
     navigator.clipboard.writeText(code).then(() => alert('Código PIX copiado!'));
+  }
+
+  // ── MONITOR DEMO ──
+  const mockProfiles = {
+    default: { followers: '—', following: '—', count: 42, letter: '?' }
+  };
+
+  function monitorPreview(val) {
+    const preview = document.getElementById('monitor-preview');
+    const username = val.replace('@','').trim();
+    if (username.length < 2) { preview.style.display = 'none'; return; }
+
+    preview.style.display = 'block';
+    const letter = username[0].toUpperCase();
+    const colors = ['#833ab4','#fd1d1d','#fcb045','#a855f7','#ec4899','#3b82f6'];
+    const color = colors[letter.charCodeAt(0) % colors.length];
+    document.getElementById('mp-avatar').style.background = `linear-gradient(135deg,${color},#fcb045)`;
+    document.getElementById('mp-avatar').textContent = letter;
+    document.getElementById('mp-username').textContent = '@' + username;
+    // Simula números baseados no username (demo)
+    const seed = username.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    document.getElementById('mp-followers').textContent = ((seed * 37) % 9000 + 100).toLocaleString('pt-BR');
+    document.getElementById('mp-following').textContent = ((seed * 13) % 1500 + 50).toLocaleString('pt-BR');
+    document.getElementById('mp-count').textContent = (seed % 80) + 15;
+  }
+
+  function triggerMonitor() {
+    const val = document.getElementById('monitor-input').value;
+    monitorPreview(val);
+    if (val.trim().length >= 2) openModalSemestral();
+  }
+
+  function switchMTab(tab) {
+    document.querySelectorAll('.mtab').forEach(t => {
+      t.style.color = 'var(--muted)';
+      t.style.borderBottom = '2px solid transparent';
+    });
+    document.querySelectorAll('[id^="mtab-"]').forEach(p => p.style.display = 'none');
+    const btn = document.querySelector(`[data-mtab="${tab}"]`);
+    btn.style.color = 'var(--purple)';
+    btn.style.borderBottom = '2px solid var(--purple)';
+    document.getElementById('mtab-' + tab).style.display = 'block';
   }
 
   // Animate on scroll
