@@ -10,6 +10,15 @@
 {% endblock %}
 
 {% block content %}
+{% if using_sqlite %}
+<div style="background:rgba(253,29,29,0.1);border:1px solid rgba(253,29,29,0.3);border-radius:10px;padding:0.875rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem">
+  <span style="font-size:1.25rem">⚠️</span>
+  <div>
+    <strong style="color:#fd6b6b">Banco SQLite detectado — dados serão perdidos a cada deploy!</strong><br>
+    <span style="font-size:0.82rem;color:#a1a1aa">Adicione o plugin PostgreSQL no Railway e defina a env var <code>DATABASE_URL</code> para persistência permanente.</span>
+  </div>
+</div>
+{% endif %}
 <!-- STATS -->
 <div class="stats-grid">
   <div class="stat-card">
