@@ -469,7 +469,7 @@ def _send_token_email(to_email, token, plan):
             'https://api.resend.com/emails',
             headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
             json={
-                'from': 'FoiEmbora <noreply@foiembora.com.br>',
+                'from': 'FoiEmbora <onboarding@resend.dev>',
                 'to': [to_email],
                 'subject': f'🔑 Seu token de acesso FoiEmbora — {plan_label}',
                 'html': html,
