@@ -921,27 +921,6 @@ def monitor_add():
         'message': None if has_data else 'Perfil adicionado! Instagram bloqueou a busca automática. Clique "Verificar" para tentar novamente.'
     })
 
-@app.route('/api/monitor/list')
-def monitor_list():
-    user = _get_current_user()
-    if not user:
-        return jsonify({'error': 'Não autenticado'}), 401
-    profiles = MonitoredProfile.query.filter_by(user_id=user.id).order_by(MonitoredProfile.created_at.desc()).all()
-    result = []
-    for p in profiles:
-        snaps = p.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).limit(2).all()
-        latest = snaps[0] if snaps else None
-        prev   = snaps[1] if len(snaps) > 1 else None
-        result.append({
-            'username':   p.username,
-            'followers':  latest.followers if latest else 0,
-            'following':  latest.following if latest else 0,
-            'is_private': latest.is_private if latest else False,
-            'diff':       (latest.followers - prev.followers) if (latest and prev) else None,
-            'last_check': latest.created_at.strftime('%d/%m %H:%M') if latest else None,
-        })
-    return jsonify({'ok': True, 'profiles': result})
-
 @app.route('/api/monitor/check/<username>', methods=['POST'])
 def monitor_check(username):
     user = _get_current_user()
