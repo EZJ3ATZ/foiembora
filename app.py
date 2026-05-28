@@ -645,35 +645,84 @@ def _get_current_user():
 
 def _fetch_ig_counts(username):
     """Busca contagem de seguidores de um perfil público. Retorna dict ou None."""
+    import re as _re
+
+    scraperapi_key = os.getenv('SCRAPERAPI_KEY') or Config.get('SCRAPERAPI_KEY')
+
     h1 = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': '*/*', 'Accept-Language': 'pt-BR,pt;q=0.9',
         'x-ig-app-id': '936619743392459',
         'Referer': f'https://www.instagram.com/{username}/',
     }
-    try:
-        url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
-        r = req_lib.get(url, headers=h1, timeout=8)
-        if r.status_code == 200:
-            u = r.json()['data']['user']
+
+    ig_url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
+
+    def _parse_api_response(data):
+        try:
+            u = data['data']['user']
             return {
                 'username':   u['username'],
                 'followers':  u['edge_followed_by']['count'],
                 'following':  u['edge_follow']['count'],
                 'is_private': u.get('is_private', False),
             }
+        except Exception:
+            return None
+
+    # 1) Tenta direto (funciona em IPs residenciais)
+    try:
+        r = req_lib.get(ig_url, headers=h1, timeout=8)
+        if r.status_code == 200:
+            result = _parse_api_response(r.json())
+            if result:
+                return result
     except Exception:
         pass
-    # Fallback: scraping
+
+    # 2) Tenta via ScraperAPI (proxy residencial rotativo)
+    if scraperapi_key:
+        try:
+            proxy_url = (
+                f'http://api.scraperapi.com?api_key={scraperapi_key}'
+                f'&url={req_lib.utils.quote(ig_url, safe="")}'
+                f'&render=false&country_code=br'
+            )
+            r = req_lib.get(proxy_url, headers=h1, timeout=30)
+            if r.status_code == 200:
+                result = _parse_api_response(r.json())
+                if result:
+                    return result
+        except Exception as e:
+            app.logger.warning(f'ScraperAPI error for {username}: {e}')
+
+        # 2b) ScraperAPI na página HTML do perfil
+        try:
+            html_url = f'https://www.instagram.com/{username}/'
+            proxy_url2 = (
+                f'http://api.scraperapi.com?api_key={scraperapi_key}'
+                f'&url={req_lib.utils.quote(html_url, safe="")}'
+                f'&render=false&country_code=br'
+            )
+            r = req_lib.get(proxy_url2, timeout=30)
+            if r.status_code == 200:
+                m  = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', r.text)
+                m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', r.text)
+                if m and m2:
+                    return {'username': username, 'followers': int(m.group(1)), 'following': int(m2.group(1)), 'is_private': False}
+        except Exception as e:
+            app.logger.warning(f'ScraperAPI HTML error for {username}: {e}')
+
+    # 3) Fallback direto na página HTML
     try:
-        import re as _re
         page = req_lib.get(f'https://www.instagram.com/{username}/', headers=h1, timeout=8)
-        m = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
+        m  = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
         m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', page.text)
         if m and m2:
             return {'username': username, 'followers': int(m.group(1)), 'following': int(m2.group(1)), 'is_private': False}
     except Exception:
         pass
+
     return None
 
 @app.route('/api/monitor/add', methods=['POST'])
