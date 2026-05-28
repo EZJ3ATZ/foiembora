@@ -198,10 +198,13 @@ def admin_dashboard():
                        .filter(Payment.status == 'approved').scalar() or 0
     recent_payments = Payment.query.order_by(Payment.created_at.desc()).limit(10).all()
     sellers        = Seller.query.order_by(Seller.created_at.desc()).all()
+    db_url = app.config['SQLALCHEMY_DATABASE_URI']
+    using_sqlite = 'sqlite' in db_url
     return render_template('admin/dashboard.html',
         total_users=total_users, total_sellers=total_sellers,
         active_subs=active_subs, total_revenue=float(total_revenue),
-        recent_payments=recent_payments, sellers=sellers)
+        recent_payments=recent_payments, sellers=sellers,
+        using_sqlite=using_sqlite)
 
 @app.route('/admin/usuarios')
 @admin_required
@@ -428,6 +431,17 @@ def checkout():
         pix_data = {"qr_code": "PIX_DEMO_00020126330014BR.GOV.BCB.PIX", "payment_id": payment.id}
 
     return jsonify({"ok": True, "pix": pix_data, "payment_id": payment.id})
+
+@app.route('/api/db-status')
+def db_status():
+    db_url = app.config['SQLALCHEMY_DATABASE_URI']
+    db_type = 'postgresql' if 'postgresql' in db_url or 'postgres' in db_url else 'sqlite'
+    mp_token = bool(os.getenv('MP_ACCESS_TOKEN') or Config.get('MP_ACCESS_TOKEN'))
+    return jsonify({
+        'db': db_type,
+        'mp_configured': mp_token,
+        'base_url': os.getenv('BASE_URL', ''),
+    })
 
 @app.route('/api/webhook/mp', methods=['POST'])
 def mp_webhook():
