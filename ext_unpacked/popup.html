@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #09090b;
+      color: #f4f4f5;
+      width: 340px;
+      min-height: 200px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-logo { font-size: 18px; font-weight: 800; color: #fff; }
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 1px; }
+
+    .body { padding: 16px; }
+
+    .screen-wrong-tab { text-align: center; padding: 24px 16px; }
+    .screen-wrong-tab .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .screen-wrong-tab p { color: #a1a1aa; font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+
+    .btn-open-ig {
+      display: block; width: 100%; padding: 10px;
+      background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+      border: none; border-radius: 10px; color: #fff;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    .stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .stat-box {
+      flex: 1; background: #18181c;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 10px; text-align: center;
+    }
+
+    .stat-box .num {
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg,#a855f7,#ec4899);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .stat-box .lbl { font-size: 10px; color: #71717a; margin-top: 2px; }
+
+    .btn-analyze {
+      width: 100%; padding: 11px;
+      background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+      border: none; border-radius: 10px; color: #fff;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s; margin-bottom: 10px;
+    }
+    .btn-analyze:hover { opacity: 0.9; }
+    .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status-box {
+      display: none; background: #18181c;
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: 10px; padding: 12px;
+      margin-bottom: 10px; text-align: center;
+    }
+    .status-box.visible { display: block; }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(168,85,247,0.2);
+      border-top-color: #a855f7; border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin: 0 auto 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-text { font-size: 12px; color: #a1a1aa; }
+
+    /* Sections */
+    .result-section { margin-bottom: 12px; }
+
+    .section-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+
+    .section-title { font-size: 12px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .section-count {
+      font-size: 11px;
+      padding: 2px 8px; border-radius: 999px; font-weight: 600;
+    }
+
+    .count-red {
+      background: rgba(239,68,68,0.12); color: #f87171;
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+    .count-green {
+      background: rgba(34,197,94,0.12); color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+    .count-purple {
+      background: rgba(168,85,247,0.15); color: #a855f7;
+      border: 1px solid rgba(168,85,247,0.25);
+    }
+
+    .results-list {
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 200px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: #3f3f46 transparent;
+    }
+
+    .user-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #18181c; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 8px 10px;
+      text-decoration: none; transition: border-color 0.15s;
+    }
+    .user-item:hover { border-color: rgba(168,85,247,0.3); }
+
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      object-fit: cover; flex-shrink: 0; background: #27272a;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-username { font-size: 12px; font-weight: 700; color: #f4f4f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-name { font-size: 11px; color: #71717a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .user-badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+
+    .badge-private {
+      font-size: 9px; background: rgba(249,115,22,0.15); color: #f97316;
+      border: 1px solid rgba(249,115,22,0.25); padding: 1px 5px;
+      border-radius: 999px; font-weight: 600;
+    }
+    .badge-unfollower {
+      font-size: 9px; background: rgba(239,68,68,0.12); color: #f87171;
+      border: 1px solid rgba(239,68,68,0.25); padding: 1px 5px;
+      border-radius: 999px; font-weight: 600;
+    }
+    .badge-new {
+      font-size: 9px; background: rgba(34,197,94,0.12); color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.25); padding: 1px 5px;
+      border-radius: 999px; font-weight: 600;
+    }
+
+    .empty-msg { text-align:center; color:#71717a; font-size:11px; padding:12px; }
+
+    .error-box {
+      display: none; background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px; padding: 12px;
+      font-size: 12px; color: #fca5a5; line-height: 1.5;
+    }
+    .error-box.visible { display: block; }
+
+    .popup-footer {
+      margin-top: 12px; text-align: center;
+      font-size: 10px; color: #52525b;
+    }
+    .popup-footer a { color: #71717a; text-decoration: none; }
+    .popup-footer a:hover { color: #a1a1aa; }
+
+    .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 10px 0; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">FoiEmbora</div>
+    <div class="header-sub">Monitore seus seguidores do Instagram</div>
+  </div>
+</div>
+
+<!-- Token screen -->
+<div id="screen-token" class="body" style="display:none">
+  <div style="text-align:center;padding:8px 0 14px">
+    <div style="font-size:2rem;margin-bottom:8px">&#128273;</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">Conectar ao FoiEmbora</div>
+    <div style="font-size:11px;color:#71717a;line-height:1.5;margin-bottom:14px">Faca login no site para conectar automaticamente.</div>
+    <button id="btn-open-site" class="btn-analyze" style="margin-bottom:10px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)">
+      Entrar no FoiEmbora &#8594;
+    </button>
+    <div style="font-size:10px;color:#52525b;margin-bottom:12px">Apos entrar no site, feche e abra a extensao novamente.</div>
+    <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:4px">
+      <div style="font-size:10px;color:#52525b;margin-bottom:6px">Ou cole seu codigo manualmente:</div>
+      <input id="token-input" type="text" placeholder="Cole o codigo aqui..."
+        style="width:100%;background:#18181c;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#f4f4f5;padding:8px 12px;font-size:11px;font-family:inherit;outline:none;margin-bottom:6px;text-align:center" />
+      <div id="token-error" style="font-size:11px;color:#fca5a5;margin-bottom:6px;display:none"></div>
+      <button id="btn-validate" class="btn-analyze" style="margin-bottom:0;font-size:12px;padding:8px">Ativar com codigo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wrong tab screen -->
+<div id="screen-wrong" class="body screen-wrong-tab" style="display:none">
+  <div class="icon">&#128247;</div>
+  <p>Abra o <strong style="color:#f4f4f5">Instagram</strong> no navegador e<br />faca login para usar o FoiEmbora.</p>
+  <button class="btn-open-ig" id="btn-open-ig">Abrir Instagram</button>
+</div>
+
+<!-- Main screen -->
+<div id="screen-main" class="body" style="display:none">
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:4px;background:#111114;border-radius:10px;padding:3px;margin-bottom:12px;">
+    <button id="tab-meu"
+      style="flex:1;padding:7px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;">
+      Minha conta
+    </button>
+    <button id="tab-spy"
+      style="flex:1;padding:7px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#71717a;">
+      Espionar perfil
+    </button>
+  </div>
+
+  <!-- Painel Minha conta -->
+  <div id="panel-meu">
+  <div class="stats-row" id="stats-row" style="display:none">
+    <div class="stat-box">
+      <div class="num" id="stat-following">-</div>
+      <div class="lbl">Seguindo</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" id="stat-followers">-</div>
+      <div class="lbl">Seguidores</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" id="stat-notback" style="background:linear-gradient(135deg,#fd1d1d,#fcb045);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">-</div>
+      <div class="lbl">Nao seguem</div>
+    </div>
+  </div>
+
+  <button class="btn-analyze" id="btn-analyze">&#128269; Verificar agora</button>
+
+  <div class="status-box" id="status-box">
+    <div class="spinner"></div>
+    <div class="status-text" id="status-text">Iniciando...</div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Secao 1: Pararam de te seguir (historico do backend) -->
+  <div class="result-section" id="results-unfollowers" style="display:none">
+    <div class="section-header">
+      <div class="section-title">&#128683; Pararam de te seguir</div>
+      <span class="section-count count-red" id="count-unfollowers">0</span>
+    </div>
+    <div class="results-list" id="list-unfollowers"></div>
+  </div>
+
+  <div class="divider" id="divider-1" style="display:none"></div>
+
+  <!-- Secao 2: Novos seguidores (historico do backend) -->
+  <div class="result-section" id="results-new" style="display:none">
+    <div class="section-header">
+      <div class="section-title">&#127881; Novos seguidores</div>
+      <span class="section-count count-green" id="count-new">0</span>
+    </div>
+    <div class="results-list" id="list-new"></div>
+  </div>
+
+  <div class="divider" id="divider-2" style="display:none"></div>
+
+  <!-- Secao 3: Nao seguem de volta (calculado localmente) -->
+  <div class="result-section" id="results-notback" style="display:none">
+    <div class="section-header">
+      <div class="section-title">&#128100; Nao te seguem de volta</div>
+      <span class="section-count count-purple" id="count-notback">0</span>
+    </div>
+    <div class="results-list" id="list-notback"></div>
+  </div>
+
+  <div class="popup-footer">
+    <a href="https://foiembora.com.br" target="_blank">foiembora.com.br</a>
+    &nbsp;·&nbsp; Sem senha &nbsp;·&nbsp; Sem risco
+  </div>
+  </div><!-- /panel-meu -->
+
+  <!-- Painel Espionar -->
+  <div id="panel-spy" style="display:none">
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;color:#71717a;margin-bottom:8px;line-height:1.5;">
+        Digite o @ de qualquer perfil publico. Usamos sua sessao do Instagram para buscar os dados — sem senha.
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input id="spy-username" type="text" placeholder="@username alvo"
+          style="flex:1;background:#18181c;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f4f4f5;padding:8px 10px;font-size:12px;font-family:inherit;outline:none;" />
+        <button id="btn-spy"
+          style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          Espionar
+        </button>
+      </div>
+    </div>
+
+    <div id="spy-status" style="display:none;background:#18181c;border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:10px;text-align:center;margin-bottom:8px;">
+      <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto 6px;"></div>
+      <div id="spy-status-text" style="font-size:11px;color:#a1a1aa;">Buscando...</div>
+    </div>
+
+    <div id="spy-result" style="display:none;">
+      <div style="background:#18181c;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <img id="spy-photo" src="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#27272a;flex-shrink:0;" onerror="this.style.display='none'" />
+          <div>
+            <div id="spy-name" style="font-size:13px;font-weight:700;"></div>
+            <div id="spy-handle" style="font-size:11px;color:#71717a;"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:#111114;border-radius:8px;padding:8px;text-align:center;">
+            <div id="spy-followers-num" style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+            <div style="font-size:9px;color:#71717a;margin-top:2px;">seguidores</div>
+          </div>
+          <div style="flex:1;background:#111114;border-radius:8px;padding:8px;text-align:center;">
+            <div id="spy-following-num" style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+            <div style="font-size:9px;color:#71717a;margin-top:2px;">seguindo</div>
+          </div>
+          <div style="flex:1;background:#111114;border-radius:8px;padding:8px;text-align:center;">
+            <div id="spy-diff-num" style="font-size:16px;font-weight:800;">—</div>
+            <div style="font-size:9px;color:#71717a;margin-top:2px;">vs anterior</div>
+          </div>
+        </div>
+        <div id="spy-history-msg" style="font-size:10px;color:#52525b;text-align:center;"></div>
+      </div>
+      <button id="btn-spy-refresh" style="width:100%;margin-top:8px;padding:8px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);border-radius:8px;color:#a855f7;font-size:11px;font-weight:700;cursor:pointer;">
+        Atualizar agora
+      </button>
+      <!-- Botao auditar lista completa de seguidores -->
+      <button id="btn-spy-followers" style="width:100%;margin-top:6px;padding:8px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">
+        &#128269; Auditar lista de seguidores
+      </button>
+    </div>
+
+    <!-- Resultado da auditoria de seguidores -->
+    <div id="spy-fl-status" style="display:none;background:#18181c;border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px;text-align:center;margin-top:8px;">
+      <div class="spinner" style="width:16px;height:16px;border-width:2px;border-top-color:#4ade80;margin:0 auto 6px;"></div>
+      <div id="spy-fl-status-text" style="font-size:11px;color:#a1a1aa;">Carregando seguidores...</div>
+    </div>
+    <div id="spy-fl-result" style="display:none;margin-top:8px;">
+      <div style="background:#18181c;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <div style="flex:1;background:#111114;border-radius:8px;padding:6px;text-align:center;">
+            <div id="spy-fl-left-count" style="font-size:18px;font-weight:800;color:#f87171;">0</div>
+            <div style="font-size:9px;color:#71717a;margin-top:2px;">&#128683; Sairam</div>
+          </div>
+          <div style="flex:1;background:#111114;border-radius:8px;padding:6px;text-align:center;">
+            <div id="spy-fl-joined-count" style="font-size:18px;font-weight:800;color:#4ade80;">0</div>
+            <div style="font-size:9px;color:#71717a;margin-top:2px;">&#127881; Chegaram</div>
+          </div>
+        </div>
+        <div id="spy-fl-msg" style="font-size:10px;color:#52525b;text-align:center;"></div>
+      </div>
+      <div id="spy-fl-left-section" style="display:none;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;color:#f87171;margin-bottom:4px;">Quem saiu:</div>
+        <div class="results-list" id="spy-fl-left-list" style="max-height:150px;"></div>
+      </div>
+      <div id="spy-fl-joined-section" style="display:none;">
+        <div style="font-size:11px;font-weight:700;color:#4ade80;margin-bottom:4px;">Quem chegou:</div>
+        <div class="results-list" id="spy-fl-joined-list" style="max-height:150px;"></div>
+      </div>
+    </div>
+    <div id="spy-fl-error" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:10px;font-size:11px;color:#fca5a5;margin-top:8px;"></div>
+
+    <div id="spy-error" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:10px;font-size:11px;color:#fca5a5;"></div>
+
+    <div class="popup-footer" style="margin-top:12px;">
+      <a href="https://foiembora.up.railway.app/minha-conta" target="_blank">Ver historico completo</a>
+    </div>
+  </div><!-- /panel-spy -->
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

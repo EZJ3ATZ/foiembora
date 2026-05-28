@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
-from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, FollowerSnapshot, MonitoredProfile, ProfileCountSnapshot, now, gen_token
+from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, FollowerSnapshot, MonitoredProfile, ProfileCountSnapshot, SpyFollowerSnapshot, now, gen_token
 
 load_dotenv()
 
@@ -671,6 +671,52 @@ def spy_update():
         'diff': diff,
         'prev_followers': prev_followers,
         'is_new': prev is None,
+    })
+
+# ─── API SPY FOLLOWER LIST (diff quem chegou/saiu) ───────────────────────────
+@app.route('/api/spy/follower_snapshot', methods=['POST'])
+def spy_follower_snapshot():
+    """Salva lista completa de seguidores de um perfil espionado e retorna diff."""
+    import json as _json
+    data      = request.json or {}
+    token_str = data.get('token', '')
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        return jsonify({'ok': False, 'error': 'Token inválido'}), 401
+
+    username  = data.get('username', '').lower().strip().lstrip('@')
+    followers = data.get('followers', [])   # lista de usernames
+
+    if not username or not isinstance(followers, list):
+        return jsonify({'ok': False, 'error': 'username e followers são obrigatórios'}), 400
+
+    # Snapshot anterior
+    prev = SpyFollowerSnapshot.query.filter_by(
+        user_id=t.user_id, ig_username=username
+    ).order_by(SpyFollowerSnapshot.created_at.desc()).first()
+
+    prev_set = set(_json.loads(prev.followers)) if prev else set()
+    curr_set = set(followers)
+
+    joined = list(curr_set - prev_set)   # chegaram
+    left   = list(prev_set - curr_set)   # saíram
+
+    # Salva novo snapshot
+    snap = SpyFollowerSnapshot(
+        user_id=t.user_id,
+        ig_username=username,
+        followers=_json.dumps(followers)
+    )
+    db.session.add(snap)
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'is_new': prev is None,
+        'total': len(curr_set),
+        'prev_total': len(prev_set),
+        'joined': joined,
+        'left': left,
     })
 
 # ─── API EXTENSÃO ────────────────────────────────────────────────────────────
