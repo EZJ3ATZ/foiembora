@@ -818,9 +818,25 @@ def monitor_check(username):
     if not profile:
         return jsonify({'error': 'Perfil não monitorado'}), 404
 
+    # Tenta buscar automaticamente primeiro
     info = _fetch_ig_counts(username)
+
+    # Se falhou, aceita contagem manual enviada pelo frontend
     if not info:
-        return jsonify({'error': 'Erro ao buscar perfil'}), 500
+        body = request.get_json(silent=True) or {}
+        manual_followers = body.get('followers')
+        manual_following = body.get('following')
+        if manual_followers is not None:
+            info = {
+                'username': username,
+                'followers': int(manual_followers),
+                'following': int(manual_following or 0),
+                'is_private': False,
+            }
+
+    if not info:
+        return jsonify({'ok': False, 'blocked': True,
+                        'message': 'Instagram bloqueou a busca automática. Insira a contagem manualmente.'}), 200
 
     prev = profile.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).first()
     snap = ProfileCountSnapshot(

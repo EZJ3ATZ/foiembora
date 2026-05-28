@@ -470,30 +470,70 @@ async function verificarAgora(username) {
   btn.disabled = true;
 
   try {
-    const r = await fetch('/api/monitor/check/' + username, {method:'POST'});
+    const r = await fetch('/api/monitor/check/' + username, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
     const d = await r.json();
     if (d.ok) {
-      // Atualiza contagens no card
       const countsEl = card.querySelector('.profile-counts');
       countsEl.innerHTML = `<strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo`;
-      // Atualiza/adiciona badge de diff
       const actionsEl = card.querySelector('.profile-actions');
       const oldBadge = actionsEl.querySelector('.diff-badge');
       if (oldBadge) oldBadge.remove();
       if (d.diff !== null && d.diff !== undefined) {
         const badge = document.createElement('span');
         badge.className = 'diff-badge ' + (d.diff > 0 ? 'diff-up' : d.diff < 0 ? 'diff-down' : 'diff-same');
-        badge.textContent = d.diff > 0 ? '+' + d.diff + ' seguidores' : d.diff < 0 ? d.diff + ' seguidores' : 'sem mudança';
+        badge.textContent = d.diff > 0 ? '+' + d.diff.toLocaleString() + ' seg.' : d.diff < 0 ? d.diff.toLocaleString() + ' seg.' : 'sem mudança';
         actionsEl.prepend(badge);
       }
-      // Atualiza last check
       const lastEl = card.querySelector('.last-check');
       if (lastEl) lastEl.textContent = 'Verificado agora';
+      // Remove manual input se existir
+      const mi = card.querySelector('.manual-input-area');
+      if (mi) mi.remove();
+    } else if (d.blocked) {
+      // Instagram bloqueou — mostra input manual
+      let mi = card.querySelector('.manual-input-area');
+      if (!mi) {
+        mi = document.createElement('div');
+        mi.className = 'manual-input-area';
+        mi.style.cssText = 'margin-top:0.75rem;padding:0.75rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;';
+        mi.innerHTML = `
+          <p style="font-size:0.78rem;color:#f97316;margin-bottom:0.5rem;">⚠️ Instagram bloqueou. Insira a contagem atual manualmente:</p>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <input type="number" placeholder="Seguidores" id="m-followers-${username}"
+              style="width:130px;background:#1a1a1e;border:1px solid rgba(255,255,255,0.1);color:#f4f4f5;padding:0.4rem 0.6rem;border-radius:8px;font-size:0.82rem;">
+            <input type="number" placeholder="Seguindo" id="m-following-${username}"
+              style="width:110px;background:#1a1a1e;border:1px solid rgba(255,255,255,0.1);color:#f4f4f5;padding:0.4rem 0.6rem;border-radius:8px;font-size:0.82rem;">
+            <button onclick="salvarManual('${username}')"
+              style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:#f97316;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;">
+              ✓ Salvar
+            </button>
+          </div>`;
+        card.querySelector('.profile-info').appendChild(mi);
+      }
     }
-  } catch(e) {}
+  } catch(e) { console.error(e); }
 
   btn.textContent = '↻ Verificar';
   btn.disabled = false;
+}
+
+async function salvarManual(username) {
+  const followers = parseInt(document.getElementById('m-followers-' + username).value) || 0;
+  const following = parseInt(document.getElementById('m-following-' + username).value) || 0;
+  const r = await fetch('/api/monitor/check/' + username, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({followers, following})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    const card = document.getElementById('pcard-' + username);
+    const countsEl = card.querySelector('.profile-counts');
+    countsEl.innerHTML = `<strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo`;
+    const mi = card.querySelector('.manual-input-area');
+    if (mi) mi.remove();
+    const lastEl = card.querySelector('.last-check');
+    if (lastEl) lastEl.textContent = 'Salvo manualmente agora';
+  }
 }
 
 // ── Spy: remover perfil ──
