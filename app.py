@@ -32,12 +32,17 @@ def load_user(user_id):
 # ─── INIT DB ───────────────────────────────────────────────────────────────
 with app.app_context():
     db.create_all()
-    # Cria admin padrão se não existir
-    if not Admin.query.first():
-        admin = Admin(email=os.getenv('ADMIN_EMAIL', 'admin@foiembora.com.br'))
-        admin.set_password(os.getenv('ADMIN_PASSWORD', 'admin123'))
+    # Cria ou atualiza admin com as credenciais das env vars
+    _email = os.getenv('ADMIN_EMAIL', 'mathcostaz')
+    _pw    = os.getenv('ADMIN_PASSWORD', 'Am241845!@#$%')
+    admin  = Admin.query.first()
+    if not admin:
+        admin = Admin(email=_email)
         db.session.add(admin)
-        db.session.commit()
+    else:
+        admin.email = _email
+    admin.set_password(_pw)
+    db.session.commit()
 
 # ─── HELPERS ───────────────────────────────────────────────────────────────
 def is_admin():
