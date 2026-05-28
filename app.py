@@ -267,7 +267,7 @@ def checkout():
     if not email or '@' not in email:
         return jsonify({'error': 'Email inválido'}), 400
 
-    amount = 5.00 if plan == 'avulso' else 24.90
+    amount = 10.00 if plan == 'avulso' else 24.90
     ref    = data.get('ref') or session.get('ref')
 
     user = User.query.filter_by(email=email).first()
