@@ -177,6 +177,36 @@ def admin_users():
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin/users.html', users=users)
 
+@app.route('/admin/criar-usuario-teste', methods=['POST'])
+@admin_required
+def admin_criar_teste():
+    from datetime import timedelta
+    email    = request.form.get('email','').strip().lower()
+    password = request.form.get('password','').strip()
+    plan     = request.form.get('plan','trimestral')
+    if not email or not password:
+        flash('Email e senha obrigatórios.', 'error')
+        return redirect(url_for('admin_users'))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email)
+        db.session.add(user)
+    user.set_password(password)
+    db.session.flush()
+
+    expires = now() + timedelta(days=90 if plan=='trimestral' else 1)
+    sub = Subscription(user_id=user.id, plan=plan, amount=29.90 if plan=='trimestral' else 10.00,
+                       status='active', starts_at=now(), expires_at=expires)
+    db.session.add(sub)
+    db.session.flush()
+
+    token = AccessToken(user_id=user.id, plan=plan, expires_at=expires)
+    db.session.add(token)
+    db.session.commit()
+    flash(f'Usuário {email} criado com plano {plan}. Token: {token.token[:20]}...', 'success')
+    return redirect(url_for('admin_users'))
+
 @app.route('/admin/assinaturas')
 @admin_required
 def admin_subscriptions():

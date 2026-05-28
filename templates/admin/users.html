@@ -5,6 +5,36 @@
 {% block page_title %}Usuários{% endblock %}
 
 {% block content %}
+
+<!-- CRIAR USUÁRIO DE TESTE -->
+<div class="card" style="margin-bottom:1.25rem">
+  <div class="card-header">
+    <div class="card-title">➕ Criar usuário manualmente</div>
+  </div>
+  <div style="padding:1.25rem">
+    <form method="POST" action="/admin/criar-usuario-teste" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:2;min-width:180px">
+        <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:0.3rem">E-mail</label>
+        <input type="text" name="email" placeholder="teste@email.com" required
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.875rem;color:var(--text);font-size:0.85rem">
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:0.3rem">Senha</label>
+        <input type="text" name="password" placeholder="senha123" required
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.875rem;color:var(--text);font-size:0.85rem">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:0.3rem">Plano</label>
+        <select name="plan" style="width:100%;background:#18181c;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.875rem;color:var(--text);font-size:0.85rem">
+          <option value="trimestral">Trimestral</option>
+          <option value="avulso">Avulso</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="white-space:nowrap">Criar usuário</button>
+    </form>
+  </div>
+</div>
+
 <div class="card">
   <div class="card-header">
     <div class="card-title">{{ users|length }} usuários cadastrados</div>
