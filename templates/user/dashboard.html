@@ -335,10 +335,61 @@
         <a href="/download/extensao" class="btn-primary" style="margin-top:1.25rem;display:inline-block">⬇️ Baixar extensão</a>
       </div>
     </div>
+
+    <!-- MOBILE: Bookmarklet -->
+    {% if token %}
+    <div class="card-box" style="margin-top:1.25rem;border-color:rgba(249,115,22,0.25)">
+      <div class="card-box-body">
+        <p style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">📱 Usar no celular (Android / iPhone)</p>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">Extensões Chrome não funcionam no celular. Use o <strong style="color:var(--text)">favorito mágico</strong> — salve o link abaixo como favorito e execute no Instagram pelo celular.</p>
+
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem">
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--orange);flex-shrink:0">1</div>
+            <div><p style="font-size:0.82rem;font-weight:600">Copie o favorito mágico</p><p style="font-size:0.76rem;color:var(--muted)">Clique em "Copiar código" abaixo.</p></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--orange);flex-shrink:0">2</div>
+            <div><p style="font-size:0.82rem;font-weight:600">Salve como favorito no celular</p><p style="font-size:0.76rem;color:var(--muted)">Adicione qualquer página como favorito, depois edite o URL e cole o código copiado no lugar.</p></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--orange);flex-shrink:0">3</div>
+            <div><p style="font-size:0.82rem;font-weight:600">Execute no Instagram</p><p style="font-size:0.76rem;color:var(--muted)">Abra o Instagram no navegador do celular, toque no favorito salvo — o resultado aparece na tela.</p></div>
+          </div>
+        </div>
+
+        <button onclick="copyBookmarklet()" id="btn-bm-copy"
+          style="width:100%;padding:0.7rem;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);border-radius:10px;color:var(--orange);font-size:0.85rem;font-weight:700;cursor:pointer;">
+          📋 Copiar código do favorito mágico
+        </button>
+        <div id="bm-copied" style="display:none;text-align:center;font-size:0.75rem;color:var(--green);margin-top:0.4rem">✓ Copiado! Agora salve como favorito.</div>
+
+        <!-- Bookmarklet oculto para cópia -->
+        <textarea id="bm-code" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px" readonly>{{ bookmarklet }}</textarea>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
 <script>
+// ── Bookmarklet copy ──
+function copyBookmarklet() {
+  const ta = document.getElementById('bm-code');
+  if (!ta) return;
+  ta.style.position = 'fixed'; ta.style.opacity = '1';
+  ta.select(); ta.setSelectionRange(0, 99999);
+  try { document.execCommand('copy'); } catch(_) {
+    navigator.clipboard?.writeText(ta.value);
+  }
+  ta.style.position = 'absolute'; ta.style.opacity = '0';
+  document.getElementById('btn-bm-copy').textContent = '✓ Copiado!';
+  document.getElementById('bm-copied').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('btn-bm-copy').textContent = '📋 Copiar código do favorito mágico';
+  }, 3000);
+}
+
 // ── Main tabs ──
 function switchMainTab(name, btn) {
   document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));

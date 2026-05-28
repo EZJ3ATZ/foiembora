@@ -1063,8 +1063,55 @@ def minha_conta():
     sub = user.active_subscription
     plan_limit = 20 if (sub and sub.plan == 'trimestral') else 3
 
+    # Gera bookmarklet personalizado com o token do usuário
+    bm_token = t.token if t else ''
+    bm_js = (
+        "javascript:(function(){"
+        f"var T='{bm_token}',A='https://foiembora.up.railway.app';"
+        "function gc(n){var c=document.cookie.split(';');"
+        "for(var i=0;i<c.length;i++){var p=c[i].trim().split('=');"
+        "if(p[0]===n)return decodeURIComponent(p[1]||'');}return null;}"
+        "var uid=gc('ds_user_id');"
+        "if(!uid){alert('FoiEmbora: Faca login no Instagram primeiro!');return;}"
+        "var H={'x-ig-app-id':'936619743392459','x-csrftoken':gc('csrftoken')||'','accept':'*/*','x-requested-with':'XMLHttpRequest'};"
+        "async function pag(url){var l=[],nx=null;"
+        "do{var r=await fetch(url+'?count=200'+(nx?'&max_id='+nx:''),{headers:H,credentials:'include'});"
+        "var d=await r.json();l.push(...(d.users||[]));nx=d.next_max_id||null;"
+        "if(nx)await new Promise(r=>setTimeout(r,600));}while(nx);return l;}"
+        "var ov=document.createElement('div');"
+        "ov.style='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;font-family:sans-serif';"
+        "ov.innerHTML='<div style=\"background:#18181c;border-radius:16px;padding:24px;max-width:320px;width:90%;text-align:center;color:#fff\">"
+        "<div style=\"font-size:1.1rem;font-weight:800;margin-bottom:8px\">FoiEmbora</div>"
+        "<div id=fei-s style=\"font-size:0.85rem;color:#a1a1aa\">Carregando...</div></div>';"
+        "document.body.appendChild(ov);"
+        "var st=document.getElementById('fei-s');"
+        "(async function(){try{"
+        "st.textContent='Buscando seguidores...';"
+        "var fw=await pag('/api/v1/friendships/'+uid+'/following/');"
+        "st.textContent='Buscando '+fw.length+' seguidos...';"
+        "var fl=await pag('/api/v1/friendships/'+uid+'/followers/');"
+        "st.textContent='Salvando...';"
+        "var r=await fetch(A+'/api/snapshot',{method:'POST',headers:{'Content-Type':'application/json'},"
+        "body:JSON.stringify({token:T,followers:fl.map(u=>u.username),following:fw.map(u=>u.username)})});"
+        "var d=await r.json();"
+        "if(d.ok){var m='<div style=\"font-size:1rem;font-weight:800;margin-bottom:10px\">FoiEmbora</div>';"
+        "if(d.unfollowers&&d.unfollowers.length){"
+        "m+='<div style=\"font-size:0.75rem;color:#f87171;font-weight:700;margin-bottom:4px\">Pararam de te seguir:</div>';"
+        "d.unfollowers.forEach(u=>{m+='<div style=\"font-size:0.8rem;color:#fff\">@'+u+'</div>';});"
+        "m+='<br>';}else{m+='<div style=\"color:#4ade80;font-size:0.8rem;margin-bottom:8px\">Ninguem parou de te seguir</div>';}"
+        "if(d.new_followers&&d.new_followers.length){"
+        "m+='<div style=\"font-size:0.75rem;color:#4ade80;font-weight:700;margin-bottom:4px\">Novos:</div>';"
+        "d.new_followers.forEach(u=>{m+='<div style=\"font-size:0.8rem;color:#fff\">@'+u+'</div>';});}"
+        "m+='<br><button onclick=\"this.closest(\\\"[style*=fixed]\\\").remove()\" style=\"background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;cursor:pointer\">Fechar</button>';"
+        "ov.querySelector('div').innerHTML=m;}"
+        "else{ov.querySelector('div').innerHTML='<p style=\"color:#f87171\">'+d.error+'</p><button onclick=\"this.closest(\\\"[style*=fixed]\\\").remove()\" style=\"padding:8px 16px;border-radius:8px;background:#333;color:#fff;border:none;cursor:pointer;margin-top:8px\">Fechar</button>';}"
+        "}catch(e){ov.querySelector('div').innerHTML='<p style=\"color:#f87171\">'+e.message+'</p><button onclick=\"this.closest(\\\"[style*=fixed]\\\").remove()\" style=\"padding:8px 16px;border-radius:8px;background:#333;color:#fff;border:none;cursor:pointer;margin-top:8px\">Fechar</button>';}})();"
+        "})();"
+    )
+
     return render_template('user/dashboard.html',
         token=t,
+        bookmarklet=bm_js,
         history=history,
         latest=history[0] if history else None,
         monitored=monitored,
