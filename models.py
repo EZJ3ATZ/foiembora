@@ -134,12 +134,12 @@ class Config(db.Model):
 
     @classmethod
     def get(cls, key, default=None):
-        row = cls.query.get(key)
+        row = cls.query.filter_by(key=key).first()
         return row.value if row else default
 
     @classmethod
     def set(cls, key, value):
-        row = cls.query.get(key)
+        row = cls.query.filter_by(key=key).first()
         if row:
             row.value = value
         else:

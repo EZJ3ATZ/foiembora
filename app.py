@@ -233,12 +233,17 @@ def admin_settings():
     if request.method == 'POST':
         mp_token = request.form.get('mp_token', '').strip()
         base_url  = request.form.get('base_url', '').strip()
-        if mp_token:
-            Config.set('MP_ACCESS_TOKEN', mp_token)
-        if base_url:
-            Config.set('BASE_URL', base_url)
-        db.session.commit()
-        flash('Configurações salvas!', 'success')
+        try:
+            if mp_token:
+                Config.set('MP_ACCESS_TOKEN', mp_token)
+            if base_url:
+                Config.set('BASE_URL', base_url)
+            db.session.commit()
+            flash('Configurações salvas!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar: {e}', 'error')
+        return redirect(url_for('admin_settings'))
 
     mp_token_saved = Config.get('MP_ACCESS_TOKEN', '')
     base_url_saved = Config.get('BASE_URL', os.getenv('BASE_URL', ''))
