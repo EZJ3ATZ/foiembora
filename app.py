@@ -560,6 +560,67 @@ def _send_token_email(to_email, token, plan):
     except Exception as e:
         app.logger.error(f"[EMAIL] Falha ao enviar para {to_email}: {e}")
 
+# ─── API PREVIEW PÚBLICO (landing page teaser) ───────────────────────────────
+@app.route('/api/preview/<username>')
+def ig_preview(username):
+    """Busca foto + contagem de um perfil público do Instagram via OG meta tags."""
+    import re as _re
+    username = username.strip().lstrip('@').lower()
+    if not username or not _re.match(r'^[\w.]{1,30}$', username):
+        return jsonify({'ok': False, 'error': 'username inválido'}), 400
+    try:
+        ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+              'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
+        resp = requests.get(
+            f'https://www.instagram.com/{username}/',
+            headers={
+                'User-Agent': ua,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            },
+            timeout=8,
+            allow_redirects=True
+        )
+        html = resp.text
+
+        def og(prop):
+            m = _re.search(rf'<meta[^>]+property=["\']og:{prop}["\'][^>]+content=["\']([^"\']+)["\']', html)
+            if not m:
+                m = _re.search(rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:{prop}["\']', html)
+            return m.group(1) if m else None
+
+        photo   = og('image')
+        title   = og('title') or username
+        desc    = og('description') or ''
+
+        # Description costuma ser: "XX Followers, XX Following, XX Posts – Ver..."
+        followers = None
+        m = _re.search(r'([\d,\.]+)\s*[Ff]ollowers?', desc)
+        if m:
+            followers = m.group(1).replace('.','').replace(',','')
+        following = None
+        m2 = _re.search(r'([\d,\.]+)\s*[Ff]ollowing', desc)
+        if m2:
+            following = m2.group(1).replace('.','').replace(',','')
+
+        # Limpa o título (remove " • Instagram" etc)
+        display_name = _re.sub(r'\s*[•·|@]\s*Instagram.*$', '', title).strip()
+
+        return jsonify({
+            'ok': True,
+            'username': username,
+            'display_name': display_name,
+            'photo_url': photo,
+            'followers': followers,
+            'following': following,
+        })
+    except Exception as e:
+        app.logger.warning(f'[preview] {username}: {e}')
+        return jsonify({'ok': False, 'username': username})
+
 # ─── API EXTENSÃO ────────────────────────────────────────────────────────────
 @app.route('/api/token/validate')
 def token_validate():
