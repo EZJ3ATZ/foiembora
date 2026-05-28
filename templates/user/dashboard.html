@@ -96,9 +96,10 @@
     <div class="card-box-body">
       <div class="monitor-input-wrap">
         <span style="font-size:1.1rem;flex-shrink:0">📷</span>
-        <input id="mon-input" type="text" placeholder="@username do perfil que deseja monitorar"
-          oninput="monitorDebounce(this.value)" onkeydown="if(event.key==='Enter')buscarPerfil()"/>
-        <button class="btn-monitor" onclick="buscarPerfil()">Buscar →</button>
+        <input id="mon-input" type="search" placeholder="@username do perfil que deseja monitorar"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          oninput="monitorDebounce(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarPerfil()}"/>
+        <button class="btn-monitor" type="button" onclick="buscarPerfil()">Buscar →</button>
       </div>
 
       <!-- Resultado -->

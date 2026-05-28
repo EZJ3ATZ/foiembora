@@ -92,31 +92,63 @@ def instagram_profile():
     username = request.args.get('username', '').strip().lower().lstrip('@')
     if not username:
         return jsonify({'error': 'Username required'}), 400
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 9; GM1903) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.89 Mobile Safari/537.36',
-            'Accept': '*/*',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8',
-            'x-ig-app-id': '936619743392459',
-            'Referer': 'https://www.instagram.com/',
-            'Origin': 'https://www.instagram.com',
-        }
-        url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
+
+    def _try_fetch(url, headers):
         r = req_lib.get(url, headers=headers, timeout=8)
         if r.status_code != 200:
-            return jsonify({'error': 'Perfil não encontrado ou conta privada'}), 404
-        data = r.json()
+            return None
+        return r.json()
+
+    # Headers realistas de browser desktop
+    h1 = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'pt-BR,pt;q=0.9',
+        'x-ig-app-id': '936619743392459',
+        'Referer': f'https://www.instagram.com/{username}/',
+        'Origin': 'https://www.instagram.com',
+        'sec-fetch-site': 'same-site',
+        'sec-fetch-mode': 'cors',
+    }
+    # Headers mobile como fallback
+    h2 = {
+        'User-Agent': 'Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; ONEPLUS A3003; OnePlus3; qcom; pt_BR; 314665256)',
+        'Accept-Language': 'pt-BR',
+        'x-ig-app-id': '936619743392459',
+    }
+
+    try:
+        url1 = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
+        data = _try_fetch(url1, h1) or _try_fetch(url1, h2)
+
+        if not data:
+            # Fallback: scraping da página pública
+            page = req_lib.get(f'https://www.instagram.com/{username}/', headers=h1, timeout=8)
+            import re as _re
+            m = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
+            m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', page.text)
+            mn = _re.search(r'"username":"([^"]+)"', page.text)
+            if m and m2:
+                return jsonify({
+                    'username':   mn.group(1) if mn else username,
+                    'full_name':  '',
+                    'followers':  int(m.group(1)),
+                    'following':  int(m2.group(1)),
+                    'is_private': False,
+                })
+            return jsonify({'error': 'Perfil não encontrado, privado ou Instagram indisponível'}), 404
+
         u = data['data']['user']
         return jsonify({
-            'username':    u['username'],
-            'full_name':   u.get('full_name', ''),
-            'followers':   u['edge_followed_by']['count'],
-            'following':   u['edge_follow']['count'],
-            'is_private':  u.get('is_private', False),
-            'biography':   u.get('biography', ''),
+            'username':   u['username'],
+            'full_name':  u.get('full_name', ''),
+            'followers':  u['edge_followed_by']['count'],
+            'following':  u['edge_follow']['count'],
+            'is_private': u.get('is_private', False),
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'IG profile error: {e}')
+        return jsonify({'error': 'Erro ao buscar perfil. Tente novamente.'}), 500
 
 # ─── AUTH ADMIN ─────────────────────────────────────────────────────────────
 @app.route('/admin/login', methods=['GET','POST'])
