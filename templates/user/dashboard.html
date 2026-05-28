@@ -52,6 +52,21 @@
     .btn-primary{background:var(--grad);border:none;color:#fff;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;display:inline-block;text-decoration:none;margin-top:1rem}
     /* TOKEN BOX */
     .token-box{background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:0.75rem 1rem;font-family:monospace;font-size:0.78rem;color:var(--purple);word-break:break-all}
+    /* TABS */
+    .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem}
+    .tab{padding:0.65rem 1rem;background:transparent;border:none;font-size:0.82rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+    .tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    /* MONITOR INPUT */
+    .monitor-input-wrap{display:flex;gap:0.75rem;background:rgba(255,255,255,0.04);border:1px solid var(--border-b);border-radius:12px;padding:0.65rem 1rem;align-items:center;margin-bottom:1rem}
+    .monitor-input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:0.9rem;font-family:inherit}
+    .btn-monitor{background:var(--grad);border:none;color:#fff;padding:0.5rem 1.1rem;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap}
+    /* PROFILE CARD */
+    .profile-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:0.9rem;margin-bottom:1rem}
+    .profile-avatar{width:48px;height:48px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
+    .profile-stats{display:flex;gap:1.25rem;margin-top:0.3rem}
+    .profile-stat{font-size:0.78rem;color:var(--muted)}.profile-stat strong{color:var(--text)}
+    .private-badge{font-size:0.68rem;background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.25);padding:2px 8px;border-radius:999px;font-weight:600;margin-left:auto}
   </style>
 </head>
 <body>
@@ -73,6 +88,63 @@
       Acesso vitalício
     {% endif %}
   </p>
+
+  <!-- MONITORAR PERFIL -->
+  {% if token.plan == 'trimestral' %}
+  <div class="section-title">🎯 Monitorar perfil</div>
+  <div class="card-box" style="margin-bottom:2rem">
+    <div class="card-box-body">
+      <div class="monitor-input-wrap">
+        <span style="font-size:1.1rem;flex-shrink:0">📷</span>
+        <input id="mon-input" type="text" placeholder="@username do perfil que deseja monitorar"
+          oninput="monitorDebounce(this.value)" onkeydown="if(event.key==='Enter')buscarPerfil()"/>
+        <button class="btn-monitor" onclick="buscarPerfil()">Buscar →</button>
+      </div>
+
+      <!-- Resultado -->
+      <div id="mon-result" style="display:none">
+        <div class="profile-card">
+          <div class="profile-avatar" id="mon-avatar">?</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:0.95rem" id="mon-username">@username</div>
+            <div class="profile-stats">
+              <div class="profile-stat"><strong id="mon-followers">—</strong> seguidores</div>
+              <div class="profile-stat"><strong id="mon-following">—</strong> seguindo</div>
+            </div>
+          </div>
+          <span id="mon-private" class="private-badge" style="display:none">Privado</span>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('novos')">🆕 Novos seguidores</button>
+          <button class="tab" onclick="switchTab('saidas')">👻 Deixaram de seguir</button>
+          <button class="tab" onclick="switchTab('historico')">📈 Histórico</button>
+        </div>
+
+        <div id="tab-novos" class="tab-panel active">
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
+            Use a extensão no Instagram para rodar a verificação. Os dados ficam salvos aqui e na próxima verificação você verá quem entrou e quem saiu.
+          </p>
+        </div>
+        <div id="tab-saidas" class="tab-panel">
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
+            Após 2 ou mais verificações pela extensão, aqui aparece quem parou de seguir o perfil monitorado.
+          </p>
+        </div>
+        <div id="tab-historico" class="tab-panel">
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
+            Evolução do número de seguidores ao longo do tempo — atualizado a cada verificação.
+          </p>
+        </div>
+      </div>
+
+      <div id="mon-loading" style="display:none;text-align:center;padding:1rem;color:var(--muted);font-size:0.85rem">
+        Buscando perfil...
+      </div>
+      <div id="mon-error" style="display:none;font-size:0.82rem;color:var(--red);padding:0.5rem 0"></div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- STATS -->
   {% if latest %}
@@ -183,5 +255,60 @@
     </div>
   </div>
 </div>
+<script>
+  let monTimer = null;
+
+  function monitorDebounce(val) {
+    clearTimeout(monTimer);
+    if (val.replace('@','').trim().length < 2) {
+      document.getElementById('mon-result').style.display = 'none';
+      document.getElementById('mon-error').style.display = 'none';
+      return;
+    }
+    monTimer = setTimeout(buscarPerfil, 700);
+  }
+
+  async function buscarPerfil() {
+    const username = document.getElementById('mon-input').value.replace('@','').trim();
+    if (username.length < 2) return;
+
+    document.getElementById('mon-loading').style.display = 'block';
+    document.getElementById('mon-result').style.display = 'none';
+    document.getElementById('mon-error').style.display = 'none';
+
+    try {
+      const r = await fetch(`/api/instagram/profile?username=${encodeURIComponent(username)}`);
+      const d = await r.json();
+      document.getElementById('mon-loading').style.display = 'none';
+
+      if (d.error) {
+        document.getElementById('mon-error').style.display = 'block';
+        document.getElementById('mon-error').textContent = '⚠️ ' + d.error;
+        return;
+      }
+
+      const colors = ['#833ab4','#fd1d1d','#a855f7','#ec4899','#3b82f6','#22c55e'];
+      const c = colors[username.charCodeAt(0) % colors.length];
+      document.getElementById('mon-avatar').style.background = `linear-gradient(135deg,${c},#fcb045)`;
+      document.getElementById('mon-avatar').textContent = username[0].toUpperCase();
+      document.getElementById('mon-username').textContent = '@' + d.username;
+      document.getElementById('mon-followers').textContent = d.followers.toLocaleString('pt-BR');
+      document.getElementById('mon-following').textContent = d.following.toLocaleString('pt-BR');
+      document.getElementById('mon-private').style.display = d.is_private ? 'inline' : 'none';
+      document.getElementById('mon-result').style.display = 'block';
+    } catch(e) {
+      document.getElementById('mon-loading').style.display = 'none';
+      document.getElementById('mon-error').style.display = 'block';
+      document.getElementById('mon-error').textContent = '⚠️ Erro ao buscar perfil.';
+    }
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+</script>
 </body>
 </html>
