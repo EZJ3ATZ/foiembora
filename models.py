@@ -162,6 +162,30 @@ class FollowerSnapshot(db.Model):
     token = db.relationship('AccessToken', backref=db.backref('snapshots', lazy='dynamic'))
 
 
+class MonitoredProfile(db.Model):
+    """Perfil público monitorado pelo usuário (spy feature)."""
+    __tablename__ = 'monitored_profiles'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    username   = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=now)
+
+    user      = db.relationship('User', backref=db.backref('monitored_profiles', lazy='dynamic'))
+    snapshots = db.relationship('ProfileCountSnapshot', backref='profile', lazy='dynamic',
+                                cascade='all, delete-orphan')
+
+
+class ProfileCountSnapshot(db.Model):
+    """Snapshot de contagem de seguidores de um perfil monitorado."""
+    __tablename__ = 'profile_count_snapshots'
+    id         = db.Column(db.Integer, primary_key=True)
+    profile_id = db.Column(db.Integer, db.ForeignKey('monitored_profiles.id'), nullable=False)
+    followers  = db.Column(db.Integer, nullable=False)
+    following  = db.Column(db.Integer, nullable=False)
+    is_private = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=now)
+
+
 class Commission(db.Model):
     __tablename__ = 'commissions'
     id          = db.Column(db.Integer, primary_key=True)

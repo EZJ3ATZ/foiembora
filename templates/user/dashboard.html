@@ -7,29 +7,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#09090b;--bg2:#111115;--card:#18181c;--border:rgba(255,255,255,0.07);--border-b:rgba(255,255,255,0.13);--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;--purple:#a855f7;--green:#22c55e;--red:#fd6b6b;--grad:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
+    :root{--bg:#09090b;--bg2:#111115;--card:#18181c;--border:rgba(255,255,255,0.07);--border-b:rgba(255,255,255,0.13);--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;--purple:#a855f7;--green:#22c55e;--red:#fd6b6b;--orange:#f97316;--blue:#3b82f6;--grad:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    /* NAV */
     nav{background:rgba(9,9,11,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
     .logo{display:flex;align-items:center;gap:0.5rem;font-weight:800;font-size:1.1rem;text-decoration:none;color:var(--text)}
     .logo-icon{width:30px;height:30px;background:var(--grad);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.9rem}
     .nav-right{display:flex;align-items:center;gap:1rem;font-size:0.85rem}
     .plan-badge{background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.3);color:var(--purple);padding:4px 12px;border-radius:999px;font-weight:700;font-size:0.75rem}
     .btn-ghost{background:transparent;border:1px solid var(--border-b);color:var(--muted);padding:0.4rem 1rem;border-radius:8px;cursor:pointer;font-size:0.8rem;text-decoration:none}
-    /* LAYOUT */
-    .main{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem}
+    .main{max-width:960px;margin:0 auto;padding:2.5rem 1.5rem}
     h1{font-size:1.6rem;font-weight:800;margin-bottom:0.3rem}
     .welcome-sub{font-size:0.875rem;color:var(--muted);margin-bottom:2rem}
-    /* CARDS */
+    /* TABS PRINCIPAIS */
+    .main-tabs{display:flex;gap:0.5rem;margin-bottom:2rem;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.4rem}
+    .main-tab{flex:1;padding:0.7rem 1rem;background:transparent;border:none;font-size:0.87rem;font-weight:700;color:var(--muted);cursor:pointer;border-radius:10px;font-family:inherit;transition:all 0.15s}
+    .main-tab.active{background:rgba(168,85,247,0.15);color:var(--purple);border:1px solid rgba(168,85,247,0.25)}
+    .tab-content{display:none}.tab-content.active{display:block}
+    /* STATS */
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
     .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
     .stat-label{font-size:0.75rem;color:var(--dim);margin-bottom:0.4rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
     .stat-value{font-size:1.75rem;font-weight:900}
-    .stat-value.red{color:var(--red)}
-    .stat-value.green{color:var(--green)}
-    .stat-value.purple{color:var(--purple)}
+    .stat-value.red{color:var(--red)}.stat-value.green{color:var(--green)}.stat-value.purple{color:var(--purple)}
     .stat-sub{font-size:0.72rem;color:var(--dim);margin-top:0.2rem}
-    /* SECTIONS */
+    /* CARDS */
     .section-title{font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
     .card-box{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem}
     .card-box-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -41,39 +42,52 @@
     .username{font-size:0.85rem;font-weight:700}
     .badge-red{font-size:0.68rem;background:rgba(253,29,29,0.1);color:var(--red);border:1px solid rgba(253,29,29,0.2);padding:2px 8px;border-radius:999px;font-weight:600}
     .badge-green{font-size:0.68rem;background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2);padding:2px 8px;border-radius:999px;font-weight:600}
-    /* HISTORY TABLE */
     table{width:100%;border-collapse:collapse;font-size:0.82rem}
     th{text-align:left;padding:0.6rem 0.75rem;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border)}
     td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border)}
     tr:last-child td{border-bottom:none}
-    /* EMPTY */
     .empty{text-align:center;padding:3rem 1.5rem;color:var(--dim)}
     .empty-icon{font-size:2.5rem;margin-bottom:0.75rem}
     .btn-primary{background:var(--grad);border:none;color:#fff;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;display:inline-block;text-decoration:none;margin-top:1rem}
-    /* TOKEN BOX */
     .token-box{background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:0.75rem 1rem;font-family:monospace;font-size:0.78rem;color:var(--purple);word-break:break-all}
-    /* TABS */
-    .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem}
-    .tab{padding:0.65rem 1rem;background:transparent;border:none;font-size:0.82rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
-    .tab.active{color:var(--purple);border-bottom-color:var(--purple)}
-    .tab-panel{display:none}.tab-panel.active{display:block}
-    /* MONITOR INPUT */
-    .monitor-input-wrap{display:flex;gap:0.75rem;background:rgba(255,255,255,0.04);border:1px solid var(--border-b);border-radius:12px;padding:0.65rem 1rem;align-items:center;margin-bottom:1rem}
-    .monitor-input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:0.9rem;font-family:inherit}
-    .btn-monitor{background:var(--grad);border:none;color:#fff;padding:0.5rem 1.1rem;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap}
-    /* PROFILE CARD */
-    .profile-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:0.9rem;margin-bottom:1rem}
-    .profile-avatar{width:48px;height:48px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
-    .profile-stats{display:flex;gap:1.25rem;margin-top:0.3rem}
-    .profile-stat{font-size:0.78rem;color:var(--muted)}.profile-stat strong{color:var(--text)}
-    .private-badge{font-size:0.68rem;background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.25);padding:2px 8px;border-radius:999px;font-weight:600;margin-left:auto}
+    /* SPY FEATURE */
+    .spy-add{display:flex;gap:0.75rem;background:rgba(255,255,255,0.04);border:1px solid var(--border-b);border-radius:12px;padding:0.65rem 1rem;align-items:center;margin-bottom:1.5rem}
+    .spy-add input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:0.9rem;font-family:inherit}
+    .btn-spy{background:var(--grad);border:none;color:#fff;padding:0.5rem 1.1rem;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap}
+    .profile-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem;margin-bottom:0.75rem}
+    .profile-card-header{display:flex;align-items:center;gap:0.9rem}
+    .profile-avatar{width:44px;height:44px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0}
+    .profile-info{flex:1}
+    .profile-name{font-weight:700;font-size:0.95rem}
+    .profile-counts{font-size:0.78rem;color:var(--muted);margin-top:0.15rem}
+    .profile-actions{display:flex;align-items:center;gap:0.5rem}
+    .btn-check{background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);color:var(--purple);padding:0.35rem 0.85rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+    .btn-remove{background:rgba(253,107,107,0.08);border:1px solid rgba(253,107,107,0.2);color:var(--red);padding:0.35rem 0.7rem;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit}
+    .diff-badge{font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:999px}
+    .diff-up{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+    .diff-down{background:rgba(253,107,107,0.1);color:var(--red);border:1px solid rgba(253,107,107,0.2)}
+    .diff-same{background:rgba(113,113,122,0.1);color:var(--dim);border:1px solid rgba(113,113,122,0.2)}
+    .profile-history{margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem;display:none}
+    .profile-history.open{display:block}
+    .btn-toggle-hist{background:transparent;border:none;color:var(--dim);font-size:0.75rem;cursor:pointer;font-family:inherit;padding:0}
+    .last-check{font-size:0.72rem;color:var(--dim)}
+    .spy-loading{font-size:0.82rem;color:var(--muted);padding:0.5rem 0;display:none}
+    .spy-error{font-size:0.82rem;color:var(--red);padding:0.5rem 0;display:none}
+    .limit-info{font-size:0.78rem;color:var(--dim);margin-bottom:1rem}
+    @media(max-width:768px){
+      .stats{grid-template-columns:1fr 1fr}.main-tabs{flex-direction:column}
+      .spy-add{flex-direction:column;align-items:stretch}.btn-spy{width:100%;text-align:center}
+    }
+    @media(max-width:480px){.stats{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
 <nav>
   <a href="/" class="logo"><div class="logo-icon">👻</div> FoiEmbora</a>
   <div class="nav-right">
+    {% if token %}
     <span class="plan-badge">{{ token.plan | upper }}</span>
+    {% endif %}
     <a href="/sair-usuario" class="btn-ghost">Sair</a>
   </div>
 </nav>
@@ -81,235 +95,370 @@
 <div class="main">
   <h1>Minha Conta</h1>
   <p class="welcome-sub">
-    Plano <strong>{{ token.plan }}</strong> ·
-    {% if token.expires_at %}
-      Válido até {{ token.expires_at.strftime('%d/%m/%Y') }}
+    {% if token %}
+      Plano <strong>{{ token.plan }}</strong> ·
+      {% if token.expires_at %}Válido até {{ token.expires_at.strftime('%d/%m/%Y') }}{% else %}Acesso vitalício{% endif %}
+    {% elif has_active_sub %}
+      Assinatura ativa
     {% else %}
-      Acesso vitalício
+      Sem plano ativo
     {% endif %}
   </p>
 
-  <!-- MONITORAR PERFIL -->
-  {% if token.plan == 'trimestral' %}
-  <div class="section-title">🎯 Monitorar perfil</div>
-  <div class="card-box" style="margin-bottom:2rem">
-    <div class="card-box-body">
-      <div class="monitor-input-wrap">
-        <span style="font-size:1.1rem;flex-shrink:0">📷</span>
-        <input id="mon-input" type="search" placeholder="@username do perfil que deseja monitorar"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          oninput="monitorDebounce(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarPerfil()}"/>
-        <button class="btn-monitor" type="button" onclick="buscarPerfil()">Buscar →</button>
-      </div>
+  <!-- TABS PRINCIPAIS -->
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="switchMainTab('spy', this)">👁️ Espionar perfis</button>
+    <button class="main-tab" onclick="switchMainTab('meu', this)">📊 Meu Instagram</button>
+    <button class="main-tab" onclick="switchMainTab('token', this)">🔑 Token / Extensão</button>
+  </div>
 
-      <!-- Resultado -->
-      <div id="mon-result" style="display:none">
-        <div class="profile-card">
-          <div class="profile-avatar" id="mon-avatar">?</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:0.95rem" id="mon-username">@username</div>
-            <div class="profile-stats">
-              <div class="profile-stat"><strong id="mon-followers">—</strong> seguidores</div>
-              <div class="profile-stat"><strong id="mon-following">—</strong> seguindo</div>
+  <!-- ═══ TAB: ESPIONAR PERFIS ═══ -->
+  <div id="tab-spy" class="tab-content active">
+
+    {% if not has_active_sub %}
+    <div class="empty">
+      <div class="empty-icon">🔒</div>
+      <div style="font-weight:700;margin-bottom:0.4rem">Assinatura necessária</div>
+      <div style="font-size:0.82rem">Compre um plano para monitorar perfis do Instagram.</div>
+      <a href="/#planos" class="btn-primary">Ver planos →</a>
+    </div>
+    {% else %}
+
+    <p class="limit-info">Você pode monitorar até <strong>{{ plan_limit }} perfis</strong> — {{ monitored | length }} em uso.</p>
+
+    <!-- Adicionar perfil -->
+    <div class="spy-add">
+      <span style="font-size:1.1rem;flex-shrink:0">🔍</span>
+      <input id="spy-input" type="text" placeholder="@username para monitorar"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPerfil()}"/>
+      <button class="btn-spy" onclick="adicionarPerfil()">+ Monitorar</button>
+    </div>
+    <div id="spy-loading" class="spy-loading">Buscando perfil no Instagram...</div>
+    <div id="spy-error" class="spy-error"></div>
+
+    <!-- Lista de perfis monitorados -->
+    <div id="spy-list">
+      {% for p in monitored %}
+      <div class="profile-card" id="pcard-{{ p.username }}">
+        <div class="profile-card-header">
+          <div class="profile-avatar" style="background:{{ ['linear-gradient(135deg,#833ab4,#fd1d1d)', 'linear-gradient(135deg,#a855f7,#3b82f6)', 'linear-gradient(135deg,#22c55e,#0ea5e9)', 'linear-gradient(135deg,#f97316,#fd1d1d)', 'linear-gradient(135deg,#ec4899,#a855f7)'][loop.index0 % 5] }}">
+            {{ p.username[0] | upper }}
+          </div>
+          <div class="profile-info">
+            <div class="profile-name">@{{ p.username }}</div>
+            <div class="profile-counts">
+              <strong>{{ '{:,}'.format(p.followers).replace(',','.') }}</strong> seguidores ·
+              <strong>{{ '{:,}'.format(p.following).replace(',','.') }}</strong> seguindo
+              {% if p.is_private %}<span style="color:var(--orange);margin-left:0.4rem">🔒 Privado</span>{% endif %}
             </div>
           </div>
-          <span id="mon-private" class="private-badge" style="display:none">Privado</span>
+          <div class="profile-actions">
+            {% if p.diff is not none %}
+              {% if p.diff > 0 %}<span class="diff-badge diff-up">+{{ p.diff }} seguidores</span>
+              {% elif p.diff < 0 %}<span class="diff-badge diff-down">{{ p.diff }} seguidores</span>
+              {% else %}<span class="diff-badge diff-same">sem mudança</span>{% endif %}
+            {% endif %}
+            <button class="btn-check" onclick="verificarAgora('{{ p.username }}')">↻ Verificar</button>
+            <button class="btn-remove" onclick="removerPerfil('{{ p.username }}')">✕</button>
+          </div>
         </div>
-
-        <div class="tabs">
-          <button class="tab active" onclick="switchTab('novos')">🆕 Novos seguidores</button>
-          <button class="tab" onclick="switchTab('saidas')">👻 Deixaram de seguir</button>
-          <button class="tab" onclick="switchTab('historico')">📈 Histórico</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
+          <span class="last-check">Última verificação: {{ p.last_check or '—' }}</span>
+          {% if p.history | length > 1 %}
+          <button class="btn-toggle-hist" onclick="toggleHistory('{{ p.username }}')">📈 Ver histórico</button>
+          {% endif %}
         </div>
-
-        <div id="tab-novos" class="tab-panel active">
-          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
-            Use a extensão no Instagram para rodar a verificação. Os dados ficam salvos aqui e na próxima verificação você verá quem entrou e quem saiu.
-          </p>
+        {% if p.history | length > 1 %}
+        <div id="hist-{{ p.username }}" class="profile-history">
+          <table>
+            <thead><tr><th>Data</th><th>Seguidores</th><th>Seguindo</th><th>Variação</th></tr></thead>
+            <tbody>
+              {% for i in range(p.history | length - 1, -1, -1) %}
+              {% set h = p.history[i] %}
+              {% set prev_h = p.history[i-1] if i > 0 else none %}
+              <tr>
+                <td style="color:var(--muted)">{{ h.date }}</td>
+                <td style="font-weight:700">{{ '{:,}'.format(h.followers).replace(',','.') }}</td>
+                <td>{{ '{:,}'.format(h.following).replace(',','.') }}</td>
+                <td>
+                  {% if prev_h %}
+                    {% set d = h.followers - prev_h.followers %}
+                    {% if d > 0 %}<span style="color:var(--green);font-weight:700">+{{ d }}</span>
+                    {% elif d < 0 %}<span style="color:var(--red);font-weight:700">{{ d }}</span>
+                    {% else %}<span style="color:var(--dim)">—</span>{% endif %}
+                  {% else %}<span style="color:var(--dim)">—</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div id="tab-saidas" class="tab-panel">
-          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
-            Após 2 ou mais verificações pela extensão, aqui aparece quem parou de seguir o perfil monitorado.
-          </p>
-        </div>
-        <div id="tab-historico" class="tab-panel">
-          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6">
-            Evolução do número de seguidores ao longo do tempo — atualizado a cada verificação.
-          </p>
-        </div>
+        {% endif %}
       </div>
-
-      <div id="mon-loading" style="display:none;text-align:center;padding:1rem;color:var(--muted);font-size:0.85rem">
-        Buscando perfil...
-      </div>
-      <div id="mon-error" style="display:none;font-size:0.82rem;color:var(--red);padding:0.5rem 0"></div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- STATS -->
-  {% if latest %}
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-label">Seguidores</div>
-      <div class="stat-value purple">{{ latest.followers | default(0) | int }}</div>
-      <div class="stat-sub">Na última verificação</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Pararam de seguir</div>
-      <div class="stat-value red">{{ latest.unfollowers | length }}</div>
-      <div class="stat-sub">Desde a verificação anterior</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Novos seguidores</div>
-      <div class="stat-value green">{{ latest.new_followers | length }}</div>
-      <div class="stat-sub">Desde a verificação anterior</div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- UNFOLLOWERS -->
-  <div class="section-title">👻 Quem parou de te seguir</div>
-  <div class="card-box">
-    {% if latest and latest.unfollowers %}
-      <div class="card-box-body">
-        {% for u in latest.unfollowers %}
-        <div class="user-row">
-          <div class="avatar" style="background:linear-gradient(135deg,#833ab4,#fd1d1d)">{{ u[0] | upper }}</div>
-          <div class="username">@{{ u }}</div>
-          <div style="margin-left:auto"><span class="badge-red">deixou de seguir</span></div>
-        </div>
-        {% endfor %}
-      </div>
-    {% elif history | length < 2 %}
-      <div class="empty">
-        <div class="empty-icon">📸</div>
-        <div style="font-weight:700;margin-bottom:0.4rem">Nenhuma comparação ainda</div>
-        <div style="font-size:0.82rem">Execute a verificação pela extensão pelo menos 2 vezes para ver quem saiu.</div>
-      </div>
-    {% else %}
-      <div class="empty">
-        <div class="empty-icon">✅</div>
-        <div style="font-weight:700">Ninguém saiu desde a última verificação</div>
-      </div>
-    {% endif %}
-  </div>
-
-  <!-- NEW FOLLOWERS -->
-  {% if latest and latest.new_followers %}
-  <div class="section-title">🆕 Novos seguidores</div>
-  <div class="card-box">
-    <div class="card-box-body">
-      {% for u in latest.new_followers %}
-      <div class="user-row">
-        <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">{{ u[0] | upper }}</div>
-        <div class="username">@{{ u }}</div>
-        <div style="margin-left:auto"><span class="badge-green">novo seguidor</span></div>
+      {% else %}
+      <div class="empty" id="spy-empty">
+        <div class="empty-icon">👁️</div>
+        <div style="font-weight:700;margin-bottom:0.4rem">Nenhum perfil monitorado ainda</div>
+        <div style="font-size:0.82rem">Digite um @username acima para começar a monitorar qualquer perfil público do Instagram.</div>
       </div>
       {% endfor %}
     </div>
-  </div>
-  {% endif %}
 
-  <!-- HISTORY TABLE -->
-  <div class="section-title">📅 Histórico de verificações</div>
-  <div class="card-box">
-    {% if history %}
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Seguidores</th>
-          <th>Seguindo</th>
-          <th>Novos</th>
-          <th>Saíram</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for h in history %}
-        <tr>
-          <td style="color:var(--muted)">{{ h.date }}</td>
-          <td style="font-weight:700">{{ h.followers }}</td>
-          <td>{{ h.following }}</td>
-          <td style="color:var(--green)">{% if h.new_followers %}+{{ h.new_followers | length }}{% else %}—{% endif %}</td>
-          <td style="color:var(--red)">{% if h.unfollowers %}-{{ h.unfollowers | length }}{% else %}—{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="empty">
-      <div class="empty-icon">📊</div>
-      <div style="font-weight:700;margin-bottom:0.4rem">Nenhuma verificação ainda</div>
-      <div style="font-size:0.82rem">Use a extensão FoiEmbora no Instagram para registrar sua primeira verificação.</div>
-      <a href="/#instalar" class="btn-primary">Instalar extensão →</a>
-    </div>
     {% endif %}
   </div>
 
-  <!-- TOKEN -->
-  <div class="section-title" style="margin-top:2rem">🔑 Seu token de acesso</div>
-  <div class="card-box">
-    <div class="card-box-body">
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">Use esse token na extensão para liberar o acesso. Guarde em local seguro.</p>
-      <div class="token-box">{{ token.token }}</div>
+  <!-- ═══ TAB: MEU INSTAGRAM ═══ -->
+  <div id="tab-meu" class="tab-content">
+
+    {% if latest %}
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Seguidores</div>
+        <div class="stat-value purple">{{ latest.followers | default(0) | int }}</div>
+        <div class="stat-sub">Na última verificação</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pararam de seguir</div>
+        <div class="stat-value red">{{ latest.unfollowers | length }}</div>
+        <div class="stat-sub">Desde a verificação anterior</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Novos seguidores</div>
+        <div class="stat-value green">{{ latest.new_followers | length }}</div>
+        <div class="stat-sub">Desde a verificação anterior</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section-title">👻 Quem parou de te seguir</div>
+    <div class="card-box">
+      {% if latest and latest.unfollowers %}
+        <div class="card-box-body">
+          {% for u in latest.unfollowers %}
+          <div class="user-row">
+            <div class="avatar" style="background:linear-gradient(135deg,#833ab4,#fd1d1d)">{{ u[0] | upper }}</div>
+            <div class="username">@{{ u }}</div>
+            <div style="margin-left:auto"><span class="badge-red">deixou de seguir</span></div>
+          </div>
+          {% endfor %}
+        </div>
+      {% elif history | length < 2 %}
+        <div class="empty">
+          <div class="empty-icon">📸</div>
+          <div style="font-weight:700;margin-bottom:0.4rem">Nenhuma comparação ainda</div>
+          <div style="font-size:0.82rem">Execute a verificação pela extensão pelo menos 2 vezes para ver quem saiu.</div>
+        </div>
+      {% else %}
+        <div class="empty">
+          <div class="empty-icon">✅</div>
+          <div style="font-weight:700">Ninguém saiu desde a última verificação</div>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if latest and latest.new_followers %}
+    <div class="section-title">🆕 Novos seguidores</div>
+    <div class="card-box">
+      <div class="card-box-body">
+        {% for u in latest.new_followers %}
+        <div class="user-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">{{ u[0] | upper }}</div>
+          <div class="username">@{{ u }}</div>
+          <div style="margin-left:auto"><span class="badge-green">novo seguidor</span></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section-title">📅 Histórico de verificações</div>
+    <div class="card-box">
+      {% if history %}
+      <table>
+        <thead><tr><th>Data</th><th>Seguidores</th><th>Seguindo</th><th>Novos</th><th>Saíram</th></tr></thead>
+        <tbody>
+          {% for h in history %}
+          <tr>
+            <td style="color:var(--muted)">{{ h.date }}</td>
+            <td style="font-weight:700">{{ h.followers }}</td>
+            <td>{{ h.following }}</td>
+            <td style="color:var(--green)">{% if h.new_followers %}+{{ h.new_followers | length }}{% else %}—{% endif %}</td>
+            <td style="color:var(--red)">{% if h.unfollowers %}-{{ h.unfollowers | length }}{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">
+        <div class="empty-icon">📊</div>
+        <div style="font-weight:700;margin-bottom:0.4rem">Nenhuma verificação ainda</div>
+        <div style="font-size:0.82rem">Use a extensão FoiEmbora no Instagram para registrar sua primeira verificação.</div>
+        <a href="/#instalar" class="btn-primary">Instalar extensão →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ═══ TAB: TOKEN / EXTENSÃO ═══ -->
+  <div id="tab-token" class="tab-content">
+    {% if token %}
+    <div class="card-box" style="margin-bottom:1.25rem">
+      <div class="card-box-body">
+        <p style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem">🔑 Seu token de acesso</p>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem">Use esse token na extensão para liberar seu acesso. Guarde em local seguro.</p>
+        <div class="token-box">{{ token.token }}</div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="card-box">
+      <div class="card-box-body">
+        <p style="font-size:0.85rem;font-weight:700;margin-bottom:1rem">📦 Como instalar a extensão</p>
+        <div style="display:flex;flex-direction:column;gap:0.9rem">
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">1</div>
+            <div><p style="font-size:0.85rem;font-weight:600">Baixe a extensão</p><p style="font-size:0.78rem;color:var(--muted)">Clique no botão abaixo para baixar o arquivo ZIP.</p></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">2</div>
+            <div><p style="font-size:0.85rem;font-weight:600">Ative no Chrome</p><p style="font-size:0.78rem;color:var(--muted)">Vá em <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px">chrome://extensions</code>, ative "modo desenvolvedor" e arraste o ZIP.</p></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">3</div>
+            <div><p style="font-size:0.85rem;font-weight:600">Cole o token</p><p style="font-size:0.78rem;color:var(--muted)">Abra o Instagram, clique no ícone da extensão e cole o token acima.</p></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:var(--purple);flex-shrink:0">4</div>
+            <div><p style="font-size:0.85rem;font-weight:600">Clique em Analisar</p><p style="font-size:0.78rem;color:var(--muted)">O resultado aparece em segundos na aba "Meu Instagram".</p></div>
+          </div>
+        </div>
+        <a href="/download/extensao" class="btn-primary" style="margin-top:1.25rem;display:inline-block">⬇️ Baixar extensão</a>
+      </div>
     </div>
   </div>
 </div>
-<script>
-  let monTimer = null;
 
-  function monitorDebounce(val) {
-    clearTimeout(monTimer);
-    if (val.replace('@','').trim().length < 2) {
-      document.getElementById('mon-result').style.display = 'none';
-      document.getElementById('mon-error').style.display = 'none';
+<script>
+// ── Main tabs ──
+function switchMainTab(name, btn) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── History toggle ──
+function toggleHistory(username) {
+  const el = document.getElementById('hist-' + username);
+  if (el) el.classList.toggle('open');
+}
+
+// ── Spy: adicionar perfil ──
+async function adicionarPerfil() {
+  const inp = document.getElementById('spy-input');
+  const username = inp.value.replace('@','').trim().toLowerCase();
+  if (!username || username.length < 2) return;
+
+  const loading = document.getElementById('spy-loading');
+  const errEl   = document.getElementById('spy-error');
+  loading.style.display = 'block';
+  errEl.style.display   = 'none';
+
+  try {
+    const r = await fetch('/api/monitor/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username})
+    });
+    const d = await r.json();
+    loading.style.display = 'none';
+
+    if (!d.ok) {
+      errEl.style.display   = 'block';
+      errEl.textContent     = '⚠️ ' + (d.error || 'Erro ao adicionar.');
       return;
     }
-    monTimer = setTimeout(buscarPerfil, 700);
+    inp.value = '';
+    // Remove empty state
+    const emptyEl = document.getElementById('spy-empty');
+    if (emptyEl) emptyEl.remove();
+    // Adiciona card
+    const list = document.getElementById('spy-list');
+    const colors = ['linear-gradient(135deg,#833ab4,#fd1d1d)','linear-gradient(135deg,#a855f7,#3b82f6)','linear-gradient(135deg,#22c55e,#0ea5e9)','linear-gradient(135deg,#f97316,#fd1d1d)','linear-gradient(135deg,#ec4899,#a855f7)'];
+    const c = colors[d.username.charCodeAt(0) % colors.length];
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.id = 'pcard-' + d.username;
+    card.innerHTML = `
+      <div class="profile-card-header">
+        <div class="profile-avatar" style="background:${c}">${d.username[0].toUpperCase()}</div>
+        <div class="profile-info">
+          <div class="profile-name">@${d.username}</div>
+          <div class="profile-counts"><strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo</div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-check" onclick="verificarAgora('${d.username}')">↻ Verificar</button>
+          <button class="btn-remove" onclick="removerPerfil('${d.username}')">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
+        <span class="last-check">Adicionado agora</span>
+      </div>`;
+    list.prepend(card);
+  } catch(e) {
+    loading.style.display = 'none';
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ Erro de conexão. Tente novamente.';
   }
+}
 
-  async function buscarPerfil() {
-    const username = document.getElementById('mon-input').value.replace('@','').trim();
-    if (username.length < 2) return;
+// ── Spy: verificar agora ──
+async function verificarAgora(username) {
+  const card = document.getElementById('pcard-' + username);
+  const btn = card.querySelector('.btn-check');
+  btn.textContent = '...';
+  btn.disabled = true;
 
-    document.getElementById('mon-loading').style.display = 'block';
-    document.getElementById('mon-result').style.display = 'none';
-    document.getElementById('mon-error').style.display = 'none';
-
-    try {
-      const r = await fetch(`/api/instagram/profile?username=${encodeURIComponent(username)}`);
-      const d = await r.json();
-      document.getElementById('mon-loading').style.display = 'none';
-
-      if (d.error) {
-        document.getElementById('mon-error').style.display = 'block';
-        document.getElementById('mon-error').textContent = '⚠️ ' + d.error;
-        return;
+  try {
+    const r = await fetch('/api/monitor/check/' + username, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) {
+      // Atualiza contagens no card
+      const countsEl = card.querySelector('.profile-counts');
+      countsEl.innerHTML = `<strong>${d.followers.toLocaleString('pt-BR')}</strong> seguidores · <strong>${d.following.toLocaleString('pt-BR')}</strong> seguindo`;
+      // Atualiza/adiciona badge de diff
+      const actionsEl = card.querySelector('.profile-actions');
+      const oldBadge = actionsEl.querySelector('.diff-badge');
+      if (oldBadge) oldBadge.remove();
+      if (d.diff !== null && d.diff !== undefined) {
+        const badge = document.createElement('span');
+        badge.className = 'diff-badge ' + (d.diff > 0 ? 'diff-up' : d.diff < 0 ? 'diff-down' : 'diff-same');
+        badge.textContent = d.diff > 0 ? '+' + d.diff + ' seguidores' : d.diff < 0 ? d.diff + ' seguidores' : 'sem mudança';
+        actionsEl.prepend(badge);
       }
+      // Atualiza last check
+      const lastEl = card.querySelector('.last-check');
+      if (lastEl) lastEl.textContent = 'Verificado agora';
+    }
+  } catch(e) {}
 
-      const colors = ['#833ab4','#fd1d1d','#a855f7','#ec4899','#3b82f6','#22c55e'];
-      const c = colors[username.charCodeAt(0) % colors.length];
-      document.getElementById('mon-avatar').style.background = `linear-gradient(135deg,${c},#fcb045)`;
-      document.getElementById('mon-avatar').textContent = username[0].toUpperCase();
-      document.getElementById('mon-username').textContent = '@' + d.username;
-      document.getElementById('mon-followers').textContent = d.followers.toLocaleString('pt-BR');
-      document.getElementById('mon-following').textContent = d.following.toLocaleString('pt-BR');
-      document.getElementById('mon-private').style.display = d.is_private ? 'inline' : 'none';
-      document.getElementById('mon-result').style.display = 'block';
-    } catch(e) {
-      document.getElementById('mon-loading').style.display = 'none';
-      document.getElementById('mon-error').style.display = 'block';
-      document.getElementById('mon-error').textContent = '⚠️ Erro ao buscar perfil.';
+  btn.textContent = '↻ Verificar';
+  btn.disabled = false;
+}
+
+// ── Spy: remover perfil ──
+async function removerPerfil(username) {
+  const r = await fetch('/api/monitor/remove/' + username, {method:'DELETE'});
+  const d = await r.json();
+  if (d.ok) {
+    const card = document.getElementById('pcard-' + username);
+    if (card) card.remove();
+    const list = document.getElementById('spy-list');
+    if (list && list.children.length === 0) {
+      list.innerHTML = `<div class="empty" id="spy-empty"><div class="empty-icon">👁️</div><div style="font-weight:700;margin-bottom:0.4rem">Nenhum perfil monitorado ainda</div><div style="font-size:0.82rem">Digite um @username acima para começar a monitorar.</div></div>`;
     }
   }
-
-  function switchTab(name) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('tab-' + name).classList.add('active');
-  }
+}
 </script>
 </body>
 </html>

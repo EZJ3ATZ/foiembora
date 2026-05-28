@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
-from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, FollowerSnapshot, now, gen_token
+from models import db, Admin, Seller, User, Subscription, Payment, AccessToken, Commission, Config, FollowerSnapshot, MonitoredProfile, ProfileCountSnapshot, now, gen_token
 
 load_dotenv()
 
@@ -636,6 +636,160 @@ def snapshot_history():
 
     return jsonify({'ok': True, 'history': history})
 
+# ─── MONITOR / SPY FEATURE ──────────────────────────────────────────────────
+def _get_current_user():
+    email = session.get('user_email')
+    if not email:
+        return None
+    return User.query.filter_by(email=email).first()
+
+def _fetch_ig_counts(username):
+    """Busca contagem de seguidores de um perfil público. Retorna dict ou None."""
+    h1 = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': '*/*', 'Accept-Language': 'pt-BR,pt;q=0.9',
+        'x-ig-app-id': '936619743392459',
+        'Referer': f'https://www.instagram.com/{username}/',
+    }
+    try:
+        url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
+        r = req_lib.get(url, headers=h1, timeout=8)
+        if r.status_code == 200:
+            u = r.json()['data']['user']
+            return {
+                'username':   u['username'],
+                'followers':  u['edge_followed_by']['count'],
+                'following':  u['edge_follow']['count'],
+                'is_private': u.get('is_private', False),
+            }
+    except Exception:
+        pass
+    # Fallback: scraping
+    try:
+        import re as _re
+        page = req_lib.get(f'https://www.instagram.com/{username}/', headers=h1, timeout=8)
+        m = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
+        m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', page.text)
+        if m and m2:
+            return {'username': username, 'followers': int(m.group(1)), 'following': int(m2.group(1)), 'is_private': False}
+    except Exception:
+        pass
+    return None
+
+@app.route('/api/monitor/add', methods=['POST'])
+def monitor_add():
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Não autenticado'}), 401
+    sub = user.active_subscription
+    if not sub:
+        return jsonify({'error': 'Assinatura ativa necessária'}), 403
+
+    data = request.json or {}
+    username = data.get('username', '').strip().lower().lstrip('@')
+    if not username or len(username) < 2:
+        return jsonify({'error': 'Username inválido'}), 400
+
+    limit = 20 if sub.plan == 'trimestral' else 3
+    count = MonitoredProfile.query.filter_by(user_id=user.id).count()
+    if count >= limit:
+        return jsonify({'error': f'Limite de {limit} perfis para o plano {sub.plan}'}), 400
+
+    if MonitoredProfile.query.filter_by(user_id=user.id, username=username).first():
+        return jsonify({'error': 'Perfil já monitorado'}), 409
+
+    info = _fetch_ig_counts(username)
+    if not info:
+        return jsonify({'error': 'Perfil não encontrado ou privado'}), 404
+
+    profile = MonitoredProfile(user_id=user.id, username=info['username'])
+    db.session.add(profile)
+    db.session.flush()
+
+    snap = ProfileCountSnapshot(
+        profile_id=profile.id,
+        followers=info['followers'],
+        following=info['following'],
+        is_private=info['is_private']
+    )
+    db.session.add(snap)
+    db.session.commit()
+    return jsonify({'ok': True, 'username': info['username'], 'followers': info['followers'], 'following': info['following']})
+
+@app.route('/api/monitor/list')
+def monitor_list():
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Não autenticado'}), 401
+    profiles = MonitoredProfile.query.filter_by(user_id=user.id).order_by(MonitoredProfile.created_at.desc()).all()
+    result = []
+    for p in profiles:
+        snaps = p.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).limit(2).all()
+        latest = snaps[0] if snaps else None
+        prev   = snaps[1] if len(snaps) > 1 else None
+        result.append({
+            'username':   p.username,
+            'followers':  latest.followers if latest else 0,
+            'following':  latest.following if latest else 0,
+            'is_private': latest.is_private if latest else False,
+            'diff':       (latest.followers - prev.followers) if (latest and prev) else None,
+            'last_check': latest.created_at.strftime('%d/%m %H:%M') if latest else None,
+        })
+    return jsonify({'ok': True, 'profiles': result})
+
+@app.route('/api/monitor/check/<username>', methods=['POST'])
+def monitor_check(username):
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Não autenticado'}), 401
+    username = username.lower().lstrip('@')
+    profile = MonitoredProfile.query.filter_by(user_id=user.id, username=username).first()
+    if not profile:
+        return jsonify({'error': 'Perfil não monitorado'}), 404
+
+    info = _fetch_ig_counts(username)
+    if not info:
+        return jsonify({'error': 'Erro ao buscar perfil'}), 500
+
+    prev = profile.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).first()
+    snap = ProfileCountSnapshot(
+        profile_id=profile.id,
+        followers=info['followers'],
+        following=info['following'],
+        is_private=info['is_private']
+    )
+    db.session.add(snap)
+    db.session.commit()
+
+    diff = info['followers'] - prev.followers if prev else 0
+    return jsonify({'ok': True, 'followers': info['followers'], 'following': info['following'], 'diff': diff})
+
+@app.route('/api/monitor/history/<username>')
+def monitor_history(username):
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Não autenticado'}), 401
+    username = username.lower().lstrip('@')
+    profile = MonitoredProfile.query.filter_by(user_id=user.id, username=username).first()
+    if not profile:
+        return jsonify({'error': 'Perfil não encontrado'}), 404
+    snaps = profile.snapshots.order_by(ProfileCountSnapshot.created_at.asc()).all()
+    history = [{'date': s.created_at.strftime('%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in snaps]
+    return jsonify({'ok': True, 'username': username, 'history': history})
+
+@app.route('/api/monitor/remove/<username>', methods=['DELETE'])
+def monitor_remove(username):
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Não autenticado'}), 401
+    username = username.lower().lstrip('@')
+    profile = MonitoredProfile.query.filter_by(user_id=user.id, username=username).first()
+    if not profile:
+        return jsonify({'error': 'Perfil não encontrado'}), 404
+    db.session.delete(profile)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 # ─── USER LOGIN / DASHBOARD ─────────────────────────────────────────────────
 @app.route('/entrar', methods=['GET', 'POST'])
 def user_login():
@@ -665,33 +819,57 @@ def minha_conta():
     if not user:
         session.pop('user_email', None)
         return redirect(url_for('user_login'))
+
     t = user.tokens.order_by(AccessToken.created_at.desc()).first()
 
-    # Snapshots e diff de unfollowers
-    snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()
+    # Snapshots da extensão (meu próprio Instagram)
     history = []
-    for i, s in enumerate(snaps):
-        followers_now  = set(_json.loads(s.followers))
-        following_now  = set(_json.loads(s.following))
-        unfollowers = []
-        new_followers = []
-        if i < len(snaps) - 1:
-            prev = snaps[i + 1]
-            followers_prev = set(_json.loads(prev.followers))
-            unfollowers   = sorted(followers_prev - followers_now)
-            new_followers = sorted(followers_now  - followers_prev)
-        history.append({
-            'date':         s.created_at.strftime('%d/%m/%Y %H:%M'),
-            'followers':    len(followers_now),
-            'following':    len(following_now),
-            'unfollowers':  unfollowers,
-            'new_followers': new_followers,
+    if t:
+        snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()
+        for i, s in enumerate(snaps):
+            followers_now = set(_json.loads(s.followers))
+            following_now = set(_json.loads(s.following))
+            unfollowers = new_followers = []
+            if i < len(snaps) - 1:
+                prev = snaps[i + 1]
+                followers_prev = set(_json.loads(prev.followers))
+                unfollowers   = sorted(followers_prev - followers_now)
+                new_followers = sorted(followers_now  - followers_prev)
+            history.append({
+                'date':          s.created_at.strftime('%d/%m/%Y %H:%M'),
+                'followers':     len(followers_now),
+                'following':     len(following_now),
+                'unfollowers':   unfollowers,
+                'new_followers': new_followers,
+            })
+
+    # Perfis monitorados (spy feature)
+    monitored = []
+    for mp in user.monitored_profiles.order_by(MonitoredProfile.created_at.desc()).all():
+        snaps_mp = mp.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).limit(30).all()
+        snap_history = [{'date': s.created_at.strftime('%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in reversed(snaps_mp)]
+        latest_snap = snaps_mp[0] if snaps_mp else None
+        prev_snap   = snaps_mp[1] if len(snaps_mp) > 1 else None
+        monitored.append({
+            'username':   mp.username,
+            'followers':  latest_snap.followers if latest_snap else 0,
+            'following':  latest_snap.following if latest_snap else 0,
+            'is_private': latest_snap.is_private if latest_snap else False,
+            'diff':       (latest_snap.followers - prev_snap.followers) if (latest_snap and prev_snap) else None,
+            'last_check': latest_snap.created_at.strftime('%d/%m %H:%M') if latest_snap else None,
+            'history':    snap_history,
         })
+
+    sub = user.active_subscription
+    plan_limit = 20 if (sub and sub.plan == 'trimestral') else 3
 
     return render_template('user/dashboard.html',
         token=t,
         history=history,
         latest=history[0] if history else None,
+        monitored=monitored,
+        plan_limit=plan_limit,
+        has_active_sub=bool(sub),
     )
 
 # ─── STATIC ─────────────────────────────────────────────────────────────────
