@@ -23,8 +23,18 @@ async function validateToken(token) {
 }
 
 async function getInstagramTab() {
-  const tabs = await chrome.tabs.query({ url: 'https://www.instagram.com/*' });
-  return tabs.length > 0 ? tabs[0] : null;
+  try {
+    const tabs = await chrome.tabs.query({ url: 'https://www.instagram.com/*' });
+    return tabs.length > 0 ? tabs[0] : null;
+  } catch (_) {
+    // Orion / browsers com API limitada — tenta pegar aba ativa
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tab = tabs[0];
+      if (tab && tab.url && tab.url.includes('instagram.com')) return tab;
+    } catch (_2) {}
+    return null;
+  }
 }
 
 async function init() {
@@ -45,11 +55,10 @@ async function init() {
 }
 
 function setupTokenScreen() {
-  const btn = $('btn-validate');
-  const input = $('token-input');
-  const err = $('token-error');
+  const btn   = $('btn-validate');
+  const input = $('email-input');
+  const err   = $('token-error');
 
-  // Botao para abrir o site (auto-login)
   const btnSite = $('btn-open-site');
   if (btnSite) {
     btnSite.addEventListener('click', () => {
@@ -57,28 +66,39 @@ function setupTokenScreen() {
     });
   }
 
-  btn.addEventListener('click', async () => {
-    const token = input.value.trim();
-    if (!token) return;
+  async function doLogin() {
+    const email = input.value.trim().toLowerCase();
+    if (!email) { input.focus(); return; }
     btn.disabled = true;
-    btn.textContent = 'Validando...';
+    btn.textContent = 'Entrando...';
     err.style.display = 'none';
 
-    const valid = await validateToken(token);
-    if (valid) {
-      await chrome.storage.local.set({ access_token: token });
-      await setupMainScreen();
-    } else {
-      err.textContent = 'Codigo invalido ou expirado. Verifique e tente novamente.';
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.ok && data.token) {
+        await chrome.storage.local.set({ access_token: data.token });
+        await setupMainScreen();
+      } else {
+        err.textContent = data.error || 'Erro ao entrar. Tente novamente.';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Entrar →';
+      }
+    } catch (_) {
+      err.textContent = 'Sem conexao. Verifique sua internet.';
       err.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = 'Ativar acesso';
+      btn.textContent = 'Entrar →';
     }
-  });
+  }
 
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') btn.click();
-  });
+  btn.addEventListener('click', doLogin);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 }
 
 async function setupMainScreen() {

@@ -731,6 +731,24 @@ def api_me():
         return jsonify({'ok': False, 'error': 'no_token'}), 403
     return jsonify({'ok': True, 'token': token.token, 'plan': token.plan})
 
+@app.route('/api/auth/email', methods=['POST'])
+def auth_by_email():
+    """Extensão envia email do usuário → backend retorna token se assinatura ativa."""
+    data  = request.json or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'ok': False, 'error': 'Email obrigatório'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'ok': False, 'error': 'Email não encontrado. Verifique e tente novamente.'}), 404
+
+    token = AccessToken.query.filter_by(user_id=user.id).order_by(AccessToken.created_at.desc()).first()
+    if not token or not token.is_valid:
+        return jsonify({'ok': False, 'error': 'Sem acesso ativo. Adquira um plano em foiembora.up.railway.app'}), 403
+
+    return jsonify({'ok': True, 'token': token.token, 'plan': token.plan})
+
 @app.route('/api/token/validate')
 def token_validate():
     token = request.args.get('token','')
