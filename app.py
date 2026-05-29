@@ -242,6 +242,55 @@ def admin_criar_teste():
     flash(f'Usuário {email} criado com plano {plan}. Token: {token.token[:20]}...', 'success')
     return redirect(url_for('admin_users'))
 
+@app.route('/admin/usuario/<int:user_id>/token')
+@admin_required
+def admin_ver_token(user_id):
+    """Retorna o token de acesso mais recente do usuário."""
+    token = AccessToken.query.filter_by(user_id=user_id).order_by(AccessToken.created_at.desc()).first()
+    if not token:
+        return jsonify({'token': None, 'error': 'Nenhum token gerado para este usuário'})
+    return jsonify({'token': token.token, 'plan': token.plan, 'valid': token.is_valid})
+
+@app.route('/admin/usuario/<int:user_id>/senha', methods=['POST'])
+@admin_required
+def admin_set_senha(user_id):
+    """Admin define nova senha para um usuário."""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'ok': False, 'error': 'Usuário não encontrado'}), 404
+    data = request.json or {}
+    password = data.get('password', '').strip()
+    if len(password) < 4:
+        return jsonify({'ok': False, 'error': 'Senha muito curta (mínimo 4 caracteres)'}), 400
+    user.set_password(password)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@app.route('/admin/usuario/<int:user_id>/apagar', methods=['DELETE'])
+@admin_required
+def admin_apagar_usuario(user_id):
+    """Remove usuário e todos os dados associados."""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'ok': False, 'error': 'Usuário não encontrado'}), 404
+    # Remove dados relacionados
+    AccessToken.query.filter_by(user_id=user_id).delete()
+    FollowerSnapshot.query.filter(
+        FollowerSnapshot.token_id.in_(
+            db.session.query(AccessToken.id).filter_by(user_id=user_id)
+        )
+    ).delete(synchronize_session=False)
+    SpyFollowerSnapshot.query.filter_by(user_id=user_id).delete()
+    for mp in MonitoredProfile.query.filter_by(user_id=user_id).all():
+        ProfileCountSnapshot.query.filter_by(profile_id=mp.id).delete()
+    MonitoredProfile.query.filter_by(user_id=user_id).delete()
+    for sub in Subscription.query.filter_by(user_id=user_id).all():
+        Payment.query.filter_by(subscription_id=sub.id).delete()
+    Subscription.query.filter_by(user_id=user_id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 @app.route('/admin/assinaturas')
 @admin_required
 def admin_subscriptions():

@@ -49,8 +49,31 @@ async function getInstagramTab() {
   return null;
 }
 
+// Ping com timeout — verifica se o content script está vivo
+function pingTab(tabId, timeoutMs = 2000) {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(false), timeoutMs);
+    try {
+      chrome.tabs.sendMessage(tabId, { action: 'ping' }, (resp) => {
+        clearTimeout(timer);
+        if (chrome.runtime.lastError) { resolve(false); return; }
+        resolve(resp && resp.alive === true);
+      });
+    } catch (_) {
+      clearTimeout(timer);
+      resolve(false);
+    }
+  });
+}
+
 // Envia mensagem para o content script — sem executeScript (não existe no iOS)
 async function sendToIg(tab, message) {
+  // Verifica se o content script está vivo
+  const alive = await pingTab(tab.id);
+  if (!alive) {
+    // No iOS/Orion o content script pode não ter sido injetado ainda — orienta o usuário
+    return 'not_alive';
+  }
   try {
     chrome.tabs.sendMessage(tab.id, message);
     return true;
@@ -161,7 +184,9 @@ async function setupMainScreen() {
     if (!ok) {
       $('status-box').classList.remove('visible');
       $('error-box').classList.add('visible');
-      $('error-box').textContent = 'Nao foi possivel conectar ao Instagram. Reabra a extensao com o Instagram aberto.';
+      $('error-box').textContent = ok === 'not_alive'
+        ? 'Recarregue a pagina do Instagram (puxe para baixo) e tente novamente.'
+        : 'Nao foi possivel conectar. Reabra a extensao com o Instagram aberto.';
       $('btn-analyze').disabled = false;
       $('btn-analyze').textContent = 'Tentar novamente';
     }
@@ -330,7 +355,9 @@ async function runSpy() {
     $('spy-status').style.display = 'none';
     $('btn-spy').disabled = false;
     $('spy-error').style.display = 'block';
-    $('spy-error').textContent = 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
+    $('spy-error').textContent = ok === 'not_alive'
+      ? 'Recarregue a pagina do Instagram e tente novamente.'
+      : 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
   }
 }
 
@@ -414,7 +441,9 @@ async function runSpyFollowers() {
     $('spy-fl-status').style.display = 'none';
     $('btn-spy-followers').disabled = false;
     $('spy-fl-error').style.display = 'block';
-    $('spy-fl-error').textContent = 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
+    $('spy-fl-error').textContent = ok === 'not_alive'
+      ? 'Recarregue a pagina do Instagram e tente novamente.'
+      : 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
   }
 }
 

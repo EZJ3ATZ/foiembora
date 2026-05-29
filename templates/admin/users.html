@@ -6,7 +6,7 @@
 
 {% block content %}
 
-<!-- CRIAR USUÁRIO DE TESTE -->
+<!-- CRIAR USUÁRIO -->
 <div class="card" style="margin-bottom:1.25rem">
   <div class="card-header">
     <div class="card-title">➕ Criar usuário manualmente</div>
@@ -35,6 +35,7 @@
   </div>
 </div>
 
+<!-- TABELA DE USUÁRIOS -->
 <div class="card">
   <div class="card-header">
     <div class="card-title">{{ users|length }} usuários cadastrados</div>
@@ -48,6 +49,7 @@
           <th>Vendedor</th>
           <th>Cadastro</th>
           <th>Expira em</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -57,9 +59,7 @@
           <td style="font-weight:600">{{ u.email }}</td>
           <td>
             {% if sub %}
-              <span class="badge {% if sub.plan == 'trimestral' %}badge-purple{% else %}badge-blue{% endif %}">
-                {{ sub.plan }}
-              </span>
+              <span class="badge {% if sub.plan == 'trimestral' %}badge-purple{% else %}badge-blue{% endif %}">{{ sub.plan }}</span>
             {% else %}
               <span class="badge badge-yellow">sem plano</span>
             {% endif %}
@@ -68,20 +68,142 @@
             {{ u.seller.name if u.seller else '—' }}
             {% if u.seller %}<span class="badge badge-purple" style="margin-left:4px">{{ u.seller.referral_code }}</span>{% endif %}
           </td>
+          <td style="color:var(--dim);font-size:0.75rem">{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '—' }}</td>
           <td style="color:var(--dim);font-size:0.75rem">
-            {{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '—' }}
+            {% if sub and sub.expires_at %}{{ sub.expires_at.strftime('%d/%m/%Y') }}{% else %}—{% endif %}
           </td>
-          <td style="color:var(--dim);font-size:0.75rem">
-            {% if sub and sub.expires_at %}
-              {{ sub.expires_at.strftime('%d/%m/%Y') }}
-            {% else %}—{% endif %}
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <!-- Ver token -->
+              <button onclick="verToken('{{ u.id }}')"
+                style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap">
+                🔑 Token
+              </button>
+              <!-- Nova senha -->
+              <button onclick="novaSenha('{{ u.id }}', '{{ u.email }}')"
+                style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap">
+                🔒 Senha
+              </button>
+              <!-- Apagar -->
+              <button onclick="apagarUsuario('{{ u.id }}', '{{ u.email }}')"
+                style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#f87171;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap">
+                🗑 Apagar
+              </button>
+            </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" style="text-align:center;color:var(--dim);padding:2.5rem">Nenhum usuário ainda.</td></tr>
+        <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:2.5rem">Nenhum usuário ainda.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<!-- MODAL TOKEN -->
+<div id="modal-token" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#18181c;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.75rem;max-width:480px;width:90%;position:relative">
+    <div style="font-size:1rem;font-weight:800;margin-bottom:1rem">🔑 Token de acesso</div>
+    <div style="font-size:0.8rem;color:#a1a1aa;margin-bottom:0.75rem">Este é o token do usuário para a extensão. Compartilhe com ele se necessário.</div>
+    <div id="token-display" style="background:#09090b;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.75rem;font-family:monospace;font-size:0.78rem;word-break:break-all;color:#a855f7;margin-bottom:1rem"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="copiarToken()"
+        style="flex:1;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:8px;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">
+        📋 Copiar
+      </button>
+      <button onclick="fecharModal('modal-token')"
+        style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#a1a1aa;padding:8px;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA SENHA -->
+<div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#18181c;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.75rem;max-width:420px;width:90%">
+    <div style="font-size:1rem;font-weight:800;margin-bottom:0.5rem">🔒 Nova senha</div>
+    <div id="modal-senha-email" style="font-size:0.8rem;color:#a1a1aa;margin-bottom:1rem"></div>
+    <input id="nova-senha-input" type="text" placeholder="Nova senha..."
+      style="width:100%;background:#09090b;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.65rem 0.875rem;color:#f4f4f5;font-size:0.9rem;margin-bottom:1rem">
+    <div style="display:flex;gap:8px">
+      <button onclick="salvarSenha()"
+        style="flex:1;background:linear-gradient(135deg,#833ab4,#fd1d1d);border:none;color:#fff;padding:9px;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">
+        Salvar
+      </button>
+      <button onclick="fecharModal('modal-senha')"
+        style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#a1a1aa;padding:9px;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _senhaUserId = null;
+
+function fecharModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+async function verToken(userId) {
+  const res = await fetch(`/admin/usuario/${userId}/token`);
+  const data = await res.json();
+  document.getElementById('token-display').textContent = data.token || 'Sem token gerado';
+  document.getElementById('modal-token').style.display = 'flex';
+}
+
+function copiarToken() {
+  const t = document.getElementById('token-display').textContent;
+  navigator.clipboard.writeText(t).then(() => {
+    const btn = document.querySelector('#modal-token button');
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar', 1500);
+  });
+}
+
+function novaSenha(userId, email) {
+  _senhaUserId = userId;
+  document.getElementById('modal-senha-email').textContent = email;
+  document.getElementById('nova-senha-input').value = '';
+  document.getElementById('modal-senha').style.display = 'flex';
+  setTimeout(() => document.getElementById('nova-senha-input').focus(), 100);
+}
+
+async function salvarSenha() {
+  const senha = document.getElementById('nova-senha-input').value.trim();
+  if (!senha) return;
+  const res = await fetch(`/admin/usuario/${_senhaUserId}/senha`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: senha})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    fecharModal('modal-senha');
+    alert('Senha alterada com sucesso!');
+  } else {
+    alert('Erro: ' + (data.error || 'Tente novamente'));
+  }
+}
+
+async function apagarUsuario(userId, email) {
+  if (!confirm(`Apagar o usuário "${email}"?\n\nEsta ação remove o usuário e todos os dados dele permanentemente.`)) return;
+  const res = await fetch(`/admin/usuario/${userId}/apagar`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.ok) {
+    location.reload();
+  } else {
+    alert('Erro: ' + (data.error || 'Tente novamente'));
+  }
+}
+
+// Fechar modais clicando fora
+['modal-token','modal-senha'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) fecharModal(id);
+  });
+});
+</script>
+
 {% endblock %}

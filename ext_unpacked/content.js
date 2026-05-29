@@ -82,6 +82,12 @@ async function getProfileInfo(username) {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // ── Ping — confirma que o content script está vivo (usado pelo popup no iOS) ──
+  if (msg.action === 'ping') {
+    sendResponse({ alive: true });
+    return true;
+  }
+
   // ── Modo SPY: busca info de um perfil externo ──
   if (msg.action === 'spy') {
     (async () => {
