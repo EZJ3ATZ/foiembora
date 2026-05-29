@@ -1082,6 +1082,10 @@ def user_login():
         return redirect(url_for('minha_conta'))
     return render_template('user/login.html')
 
+@app.route('/privacidade')
+def privacidade():
+    return render_template('privacidade.html')
+
 @app.route('/bem-vindo')
 def bem_vindo():
     if not session.get('user_email'):

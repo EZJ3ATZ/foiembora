@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Política de Privacidade — FoiEmbora</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #09090b; --card: #18181c; --border: rgba(255,255,255,0.08);
+    --text: #f4f4f5; --muted: #a1a1aa; --dim: #52525b;
+    --grad: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding: 2rem 1rem 4rem; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2.5rem; text-decoration: none; }
+  .logo span { font-size: 1.2rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  h1 { font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem; }
+  .updated { font-size: 0.8rem; color: var(--dim); margin-bottom: 2.5rem; }
+  h2 { font-size: 1rem; font-weight: 800; margin: 2rem 0 0.6rem; color: #f4f4f5; }
+  p { font-size: 0.9rem; color: var(--muted); line-height: 1.75; margin-bottom: 0.75rem; }
+  ul { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+  ul li { font-size: 0.9rem; color: var(--muted); line-height: 1.75; }
+  a { color: #a855f7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+  .badge { display: inline-block; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a href="/" class="logo"><span>FoiEmbora</span></a>
+
+  <h1>Política de Privacidade</h1>
+  <p class="updated">Última atualização: 28 de maio de 2026</p>
+
+  <div class="section">
+    <div class="badge">✓ Sem senha · Sem risco de ban</div>
+    <p>O FoiEmbora é uma plataforma que permite monitorar seguidores do Instagram usando a sessão autenticada do próprio usuário, sem armazenar senhas. Esta política descreve quais dados coletamos, como os usamos e como os protegemos.</p>
+  </div>
+
+  <div class="section">
+    <h2>1. Dados coletados</h2>
+    <p>A extensão do FoiEmbora coleta os seguintes dados por meio da sessão autenticada do usuário no Instagram:</p>
+    <ul>
+      <li>Lista de usuários que o usuário segue (following)</li>
+      <li>Lista de seguidores do usuário (followers)</li>
+      <li>Informações públicas de perfis monitorados (nome, username, contagem de seguidores)</li>
+    </ul>
+    <p>Do usuário da plataforma, coletamos:</p>
+    <ul>
+      <li>Endereço de e-mail (para criar e identificar a conta)</li>
+      <li>Token de acesso gerado pela plataforma (armazenado localmente na extensão)</li>
+    </ul>
+    <p><strong>Não coletamos e não armazenamos senhas do Instagram.</strong></p>
+  </div>
+
+  <div class="section">
+    <h2>2. Como usamos os dados</h2>
+    <p>Os dados coletados são usados exclusivamente para:</p>
+    <ul>
+      <li>Comparar snapshots de seguidores e identificar quem parou de te seguir ou quem é novo</li>
+      <li>Rastrear mudanças em perfis públicos monitorados pelo usuário</li>
+      <li>Manter o histórico de análises associado à conta do usuário</li>
+    </ul>
+    <p>Não usamos os dados para fins de publicidade, perfilagem, crédito ou qualquer finalidade não relacionada ao monitoramento de seguidores.</p>
+  </div>
+
+  <div class="section">
+    <h2>3. Compartilhamento de dados</h2>
+    <p>Não vendemos, alugamos nem transferimos dados dos usuários a terceiros. Os dados são armazenados em servidores próprios (Railway) e não são compartilhados com nenhuma outra empresa ou serviço.</p>
+  </div>
+
+  <div class="section">
+    <h2>4. Retenção de dados</h2>
+    <p>Os dados de rastreamento (snapshots de seguidores) ficam disponíveis durante o período de assinatura ativa. Se a assinatura expirar e não for renovada, todos os dados associados à conta são excluídos automaticamente. O usuário também pode solicitar a exclusão a qualquer momento pelo suporte.</p>
+  </div>
+
+  <div class="section">
+    <h2>5. Permissões da extensão</h2>
+    <p>A extensão do FoiEmbora solicita as seguintes permissões e as usa exclusivamente para:</p>
+    <ul>
+      <li><strong>activeTab:</strong> Acessar a aba do Instagram aberta para coletar dados de seguidores via sessão autenticada</li>
+      <li><strong>tabs:</strong> Identificar qual aba está com o Instagram aberto</li>
+      <li><strong>storage:</strong> Armazenar localmente o token de acesso do usuário</li>
+      <li><strong>scripting:</strong> Injetar o script de análise na aba do Instagram</li>
+    </ul>
+    <p>A extensão não acessa dados de outros sites ou abas não relacionadas ao Instagram ou ao FoiEmbora.</p>
+  </div>
+
+  <div class="section">
+    <h2>6. Segurança</h2>
+    <p>Os dados são transmitidos via HTTPS. O token de acesso armazenado na extensão é único por usuário e pode ser revogado a qualquer momento pelo suporte. Nenhuma senha do Instagram é armazenada em qualquer momento.</p>
+  </div>
+
+  <div class="section">
+    <h2>7. Direitos do usuário</h2>
+    <p>O usuário pode a qualquer momento:</p>
+    <ul>
+      <li>Solicitar a exclusão de todos os seus dados</li>
+      <li>Solicitar uma cópia dos dados armazenados</li>
+      <li>Revogar o acesso da extensão removendo-a do navegador</li>
+    </ul>
+    <p>Para exercer esses direitos, entre em contato pelo e-mail: <a href="mailto:suporte@foiembora.com.br">suporte@foiembora.com.br</a></p>
+  </div>
+
+  <div class="section">
+    <h2>8. Contato</h2>
+    <p>Dúvidas sobre esta política de privacidade? Entre em contato:<br/>
+    <a href="mailto:suporte@foiembora.com.br">suporte@foiembora.com.br</a></p>
+  </div>
+
+</div>
+</body>
+</html>
