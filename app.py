@@ -311,11 +311,14 @@ def admin_settings():
     if request.method == 'POST':
         mp_token = request.form.get('mp_token', '').strip()
         base_url  = request.form.get('base_url', '').strip()
+        hiker_key = request.form.get('hiker_key', '').strip()
         try:
             if mp_token:
                 Config.set('MP_ACCESS_TOKEN', mp_token)
             if base_url:
                 Config.set('BASE_URL', base_url)
+            if hiker_key:
+                Config.set('HIKERAPI_KEY', hiker_key)
             db.session.commit()
             flash('Configurações salvas!', 'success')
         except Exception as e:
@@ -325,6 +328,7 @@ def admin_settings():
 
     mp_token_saved = Config.get('MP_ACCESS_TOKEN', '')
     base_url_saved = Config.get('BASE_URL', os.getenv('BASE_URL', ''))
+    hiker_key_saved = Config.get('HIKERAPI_KEY', os.getenv('HIKERAPI_KEY', ''))
     mp_status = None
     mp_balance = None
 
@@ -344,6 +348,8 @@ def admin_settings():
         mp_token_configured=bool(mp_token),
         mp_status=mp_status,
         base_url=base_url_display,
+        hiker_key_saved=hiker_key_saved,
+        hiker_configured=bool(hiker_key_saved),
         webhook_url=f"{base_url_display}/api/webhook/mp"
     )
 
