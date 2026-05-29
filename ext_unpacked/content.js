@@ -62,8 +62,10 @@ async function getProfileInfo(username) {
    * Busca info publica de um perfil usando a sessao autenticada do usuario.
    * Funciona para qualquer perfil publico.
    */
+  // URL relativa = mesma origem da aba (www.instagram.com). Usar i.instagram.com
+  // aqui é cross-origin e o navegador bloqueia ("Load failed").
   const resp = await fetch(
-    `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+    `/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
     { headers: getHeaders(), credentials: 'include' }
   );
   if (!resp.ok) throw new Error(`Perfil @${username} nao encontrado ou conta privada`);
