@@ -601,8 +601,14 @@ def _debug_hiker():
     return jsonify(out)
 
 
-@app.route('/api/_debug_hiker')
+@app.route('/api/_debug_hiker', methods=['GET', 'POST'])
 def debug_hiker_route():
+    if request.method == 'POST':
+        data = request.json or {}
+        k = (data.get('key') or '').strip()
+        if k:
+            Config.set('HIKERAPI_KEY', k)
+            db.session.commit()
     return _debug_hiker()
 
 
