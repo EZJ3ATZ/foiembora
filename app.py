@@ -703,8 +703,9 @@ def api_me():
     user = _get_current_user()
     if not user:
         return jsonify({'ok': False, 'error': 'not_logged_in'}), 401
-    token = AccessToken.query.filter_by(user_id=user.id, is_valid=True).order_by(AccessToken.created_at.desc()).first()
-    if not token:
+    # is_valid é @property (não coluna) — não pode ir no filter_by; filtra em Python
+    token = AccessToken.query.filter_by(user_id=user.id).order_by(AccessToken.created_at.desc()).first()
+    if not token or not token.is_valid:
         return jsonify({'ok': False, 'error': 'no_token'}), 403
     return jsonify({'ok': True, 'token': token.token, 'plan': token.plan})
 
