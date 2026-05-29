@@ -153,18 +153,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         chrome.runtime.sendMessage({ action: 'status', text: `Buscando @${targetUsername}...` });
         const info = await getProfileInfo(targetUsername);
 
-        // Envia para o backend
+        // Envia para o backend (NÃO derruba o spy se falhar — degradação suave)
         const stored = await chrome.storage.local.get('access_token');
         const token  = stored.access_token;
         let backendResult = null;
         if (token) {
-          chrome.runtime.sendMessage({ action: 'status', text: 'Salvando no servidor...' });
-          const r = await fetch('https://foiembora.up.railway.app/api/spy/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, ...info })
-          });
-          if (r.ok) backendResult = await r.json();
+          try {
+            chrome.runtime.sendMessage({ action: 'status', text: 'Salvando no servidor...' });
+            const r = await fetch('https://foiembora.up.railway.app/api/spy/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, ...info })
+            });
+            if (r.ok) backendResult = await r.json();
+          } catch (_) {
+            // Falha de sync (ex.: cross-origin no Orion/iOS) — ainda mostra os dados do perfil
+          }
         }
 
         chrome.runtime.sendMessage({
@@ -207,27 +211,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const token  = stored.access_token;
         if (!token) throw new Error('Extensao nao conectada. Faca login no FoiEmbora.');
 
-        chrome.runtime.sendMessage({ action: 'spy_fl_status', text: 'Salvando snapshot no servidor...' });
-        const r = await fetch('https://foiembora.up.railway.app/api/spy/follower_snapshot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, username: targetUsername, followers: followerUsernames })
-        });
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({}));
-          throw new Error(err.error || 'Erro ao salvar no servidor');
+        // Sync com o servidor para calcular diff (quem chegou/saiu).
+        // Se falhar (ex.: cross-origin no Orion/iOS), mostra ao menos o total atual.
+        let result = null;
+        try {
+          chrome.runtime.sendMessage({ action: 'spy_fl_status', text: 'Salvando snapshot no servidor...' });
+          const r = await fetch('https://foiembora.up.railway.app/api/spy/follower_snapshot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, username: targetUsername, followers: followerUsernames })
+          });
+          if (r.ok) result = await r.json();
+        } catch (_) {
+          // sync falhou — segue com dados locais
         }
-        const result = await r.json();
 
         chrome.runtime.sendMessage({
           action: 'spy_followers_result',
           username: targetUsername,
           info,
-          total: result.total,
-          prev_total: result.prev_total,
-          is_new: result.is_new,
-          joined: result.joined,
-          left: result.left,
+          total: result?.total ?? followerUsernames.length,
+          prev_total: result?.prev_total ?? null,
+          is_new: result?.is_new ?? true,
+          joined: result?.joined ?? [],
+          left: result?.left ?? [],
         });
       } catch (err) {
         chrome.runtime.sendMessage({ action: 'spy_fl_error', text: err.message });

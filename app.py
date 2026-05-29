@@ -15,6 +15,29 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
+# ─── CORS p/ extensão (content script no instagram.com chama nossos endpoints) ─
+# Orion/WebKit (iOS) NÃO faz o bypass de CORS que o Chrome faz via host_permissions.
+# Sem estes headers, o POST cross-origin de www.instagram.com -> foiembora falha
+# com "Load failed" e derruba o spy. Liberamos as origens da extensão.
+_CORS_ORIGINS = ('https://www.instagram.com', 'https://instagram.com')
+
+@app.after_request
+def _add_cors(resp):
+    origin = request.headers.get('Origin', '')
+    if origin in _CORS_ORIGINS:
+        resp.headers['Access-Control-Allow-Origin']  = origin
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        resp.headers['Vary'] = 'Origin'
+    return resp
+
+@app.before_request
+def _handle_preflight():
+    if request.method == 'OPTIONS':
+        origin = request.headers.get('Origin', '')
+        if origin in _CORS_ORIGINS:
+            return ('', 204)
+
 # Jinja2 filters
 app.jinja_env.globals['enumerate'] = enumerate
 
