@@ -229,48 +229,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           is_private: u.is_private
         }));
 
-      // ---- Sync snapshot com o backend ----
-      let unfollowers = [];
-      let new_followers = [];
-      let snapshotOk = false;
-
-      try {
-        const stored = await chrome.storage.local.get('access_token');
-        const token = stored.access_token;
-        if (token) {
-          chrome.runtime.sendMessage({ action: 'status', text: 'Sincronizando com o servidor...' });
-          const snapshotResp = await fetch(
-            'https://foiembora.up.railway.app/api/snapshot',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                token: token,
-                followers: followers.map(u => u.username),
-                following: following.map(u => u.username)
-              })
-            }
-          );
-          if (snapshotResp.ok) {
-            const snapshotData = await snapshotResp.json();
-            unfollowers = snapshotData.unfollowers || [];
-            new_followers = snapshotData.new_followers || [];
-            snapshotOk = true;
-          }
-        }
-      } catch (_) {
-        // Falha silenciosa — ainda retorna dados locais
-      }
-
+      // O POST de snapshot é feito pelo POPUP (origem da extensão fala com foiembora;
+      // o content script em instagram.com é bloqueado no Orion/iOS). Mandamos as listas cruas.
       chrome.runtime.sendMessage({
         action: 'result',
         notFollowingBack,
         totalFollowing: following.length,
         totalFollowers: followers.length,
         username: user.username,
-        unfollowers,
-        new_followers,
-        snapshotOk
+        followers: followers.map(u => u.username),
+        following: following.map(u => u.username),
       });
     } catch (err) {
       chrome.runtime.sendMessage({ action: 'error', text: err.message });

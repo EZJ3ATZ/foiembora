@@ -272,46 +272,62 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
 
     if (msg.action === 'result') {
-      $('status-box').classList.remove('visible');
+      (async () => {
+        $('status-box').classList.remove('visible');
 
-      $('stat-following').textContent = msg.totalFollowing;
-      $('stat-followers').textContent = msg.totalFollowers;
-      $('stat-notback').textContent   = msg.notFollowingBack.length;
-      $('stats-row').style.display    = 'flex';
+        $('stat-following').textContent = msg.totalFollowing;
+        $('stat-followers').textContent = msg.totalFollowers;
+        $('stat-notback').textContent   = msg.notFollowingBack.length;
+        $('stats-row').style.display    = 'flex';
 
-      const notback = msg.notFollowingBack;
-      $('count-notback').textContent = notback.length;
-      $('results-notback').style.display = 'block';
-      buildUserList(notback, 'list-notback', false);
+        const notback = msg.notFollowingBack;
+        $('count-notback').textContent = notback.length;
+        $('results-notback').style.display = 'block';
+        buildUserList(notback, 'list-notback', false);
 
-      const unfollowers = msg.unfollowers || [];
-      if (msg.snapshotOk && unfollowers.length >= 0) {
-        $('count-unfollowers').textContent = unfollowers.length;
-        $('results-unfollowers').style.display = 'block';
-        if (unfollowers.length === 0) {
-          $('list-unfollowers').innerHTML = '<div class="empty-msg">Ninguem parou de te seguir desde a ultima analise</div>';
+        const btn = $('btn-analyze');
+        if (btn) { btn.disabled = false; btn.textContent = 'Verificar novamente'; }
+
+        // Sync snapshot a partir do POPUP (origem da extensão — funciona no Orion,
+        // diferente do content script). Calcula quem saiu / novos seguidores.
+        let snap = null;
+        try {
+          const stored = await chrome.storage.local.get('access_token');
+          const token  = stored.access_token;
+          if (token && msg.followers && msg.following) {
+            const r = await fetch(`${API_BASE}/api/snapshot`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, followers: msg.followers, following: msg.following })
+            });
+            if (r.ok) snap = await r.json();
+          }
+        } catch (_) {}
+
+        if (snap) {
+          const unfollowers = snap.unfollowers || [];
+          $('count-unfollowers').textContent = unfollowers.length;
+          $('results-unfollowers').style.display = 'block';
+          if (unfollowers.length === 0) {
+            $('list-unfollowers').innerHTML = '<div class="empty-msg">Ninguem parou de te seguir desde a ultima analise</div>';
+          } else {
+            buildUserList(unfollowers, 'list-unfollowers', true);
+          }
+
+          const newFollowers = snap.new_followers || [];
+          $('count-new').textContent = newFollowers.length;
+          $('results-new').style.display = 'block';
+          if (newFollowers.length === 0) {
+            $('list-new').innerHTML = '<div class="empty-msg">Nenhum novo seguidor desde a ultima analise</div>';
+          } else {
+            buildUserList(newFollowers, 'list-new', false);
+          }
         } else {
-          buildUserList(unfollowers, 'list-unfollowers', true);
+          $('results-unfollowers').style.display = 'block';
+          $('count-unfollowers').textContent = '?';
+          $('list-unfollowers').innerHTML = '<div class="empty-msg">Primeira analise salva! Faca a proxima para ver quem saiu.</div>';
         }
-      } else if (!msg.snapshotOk) {
-        $('results-unfollowers').style.display = 'block';
-        $('count-unfollowers').textContent = '?';
-        $('list-unfollowers').innerHTML = '<div class="empty-msg">Primeira analise salva! Faca a proxima para ver quem saiu.</div>';
-      }
-
-      const newFollowers = msg.new_followers || [];
-      if (msg.snapshotOk && newFollowers.length >= 0) {
-        $('count-new').textContent = newFollowers.length;
-        $('results-new').style.display = 'block';
-        if (newFollowers.length === 0) {
-          $('list-new').innerHTML = '<div class="empty-msg">Nenhum novo seguidor desde a ultima analise</div>';
-        } else {
-          buildUserList(newFollowers, 'list-new', false);
-        }
-      }
-
-      const btn = $('btn-analyze');
-      if (btn) { btn.disabled = false; btn.textContent = 'Verificar novamente'; }
+      })();
     }
   } catch (_) {}
 });
