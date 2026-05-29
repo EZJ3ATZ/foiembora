@@ -370,36 +370,55 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
 
     if (msg.action === 'spy_result') {
-      $('spy-status').style.display = 'none';
-      $('btn-spy').disabled = false;
+      (async () => {
+        $('spy-status').style.display = 'none';
+        $('btn-spy').disabled = false;
 
-      const info = msg.info;
-      $('spy-name').textContent         = info.full_name || info.username;
-      $('spy-handle').textContent       = '@' + info.username;
-      $('spy-photo').src                = info.profile_pic_url || '';
-      $('spy-followers-num').textContent = Number(info.followers).toLocaleString('pt-BR');
-      $('spy-following-num').textContent = Number(info.following).toLocaleString('pt-BR');
+        const info = msg.info;
+        $('spy-name').textContent          = info.full_name || info.username;
+        $('spy-handle').textContent        = '@' + info.username;
+        $('spy-photo').src                 = info.profile_pic_url || '';
+        $('spy-followers-num').textContent = Number(info.followers).toLocaleString('pt-BR');
+        $('spy-following-num').textContent = Number(info.following).toLocaleString('pt-BR');
+        $('spy-result').style.display      = 'block';
 
-      const diffEl = $('spy-diff-num');
-      if (msg.diff !== null && msg.diff !== undefined) {
-        const d = msg.diff;
-        diffEl.textContent = (d >= 0 ? '+' : '') + d.toLocaleString('pt-BR');
-        diffEl.style.background = d > 0
-          ? 'linear-gradient(135deg,#22c55e,#4ade80)'
-          : d < 0 ? 'linear-gradient(135deg,#ef4444,#f87171)'
-          : 'linear-gradient(135deg,#a855f7,#ec4899)';
-        diffEl.style.webkitBackgroundClip = 'text';
-        diffEl.style.webkitTextFillColor  = 'transparent';
-        diffEl.style.backgroundClip       = 'text';
-      } else {
-        diffEl.textContent = '—';
-      }
+        // Salva no servidor a partir do POPUP (origem da extensão — funciona no Orion,
+        // diferente do content script em instagram.com). Retorna o diff.
+        let backend = null;
+        try {
+          const stored = await chrome.storage.local.get('access_token');
+          const token  = stored.access_token;
+          if (token) {
+            const r = await fetch(`${API_BASE}/api/spy/update`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, ...info })
+            });
+            if (r.ok) backend = await r.json();
+          }
+        } catch (_) {}
 
-      $('spy-history-msg').textContent = msg.is_new
-        ? 'Primeira verificacao salva! Volte amanha para ver mudancas.'
-        : `Comparado com ${msg.prev_followers?.toLocaleString('pt-BR')} seguidores anteriores`;
+        const diffEl = $('spy-diff-num');
+        const diff = backend?.diff;
+        if (diff !== null && diff !== undefined) {
+          diffEl.textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString('pt-BR');
+          diffEl.style.background = diff > 0
+            ? 'linear-gradient(135deg,#22c55e,#4ade80)'
+            : diff < 0 ? 'linear-gradient(135deg,#ef4444,#f87171)'
+            : 'linear-gradient(135deg,#a855f7,#ec4899)';
+          diffEl.style.webkitBackgroundClip = 'text';
+          diffEl.style.webkitTextFillColor  = 'transparent';
+          diffEl.style.backgroundClip       = 'text';
+        } else {
+          diffEl.textContent = '—';
+        }
 
-      $('spy-result').style.display = 'block';
+        $('spy-history-msg').textContent = !backend
+          ? 'Nao foi possivel salvar no servidor. Verifique sua conexao/login.'
+          : backend.is_new
+            ? 'Primeira verificacao salva! Volte amanha para ver mudancas.'
+            : `Comparado com ${backend.prev_followers?.toLocaleString('pt-BR')} seguidores anteriores`;
+      })();
     }
 
     if (msg.action === 'error' && $('spy-status')?.style.display !== 'none') {
@@ -457,44 +476,71 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
 
     if (msg.action === 'spy_followers_result') {
-      $('spy-fl-status').style.display = 'none';
-      $('btn-spy-followers').disabled  = false;
+      (async () => {
+        $('btn-spy-followers').disabled = false;
 
-      $('spy-fl-left-count').textContent   = msg.left?.length || 0;
-      $('spy-fl-joined-count').textContent = msg.joined?.length || 0;
-      $('spy-fl-msg').textContent = msg.is_new
-        ? `Primeiro snapshot salvo com ${(msg.total || 0).toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
-        : `Comparado com snapshot anterior (${(msg.prev_total || 0).toLocaleString('pt-BR')} seguidores)`;
+        // Salva o snapshot da lista pelo POPUP (origem da extensão — funciona no Orion).
+        let result = null;
+        try {
+          const stored = await chrome.storage.local.get('access_token');
+          const token  = stored.access_token;
+          if (token) {
+            $('spy-fl-status-text').textContent = 'Salvando snapshot no servidor...';
+            const r = await fetch(`${API_BASE}/api/spy/follower_snapshot`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, username: msg.username, followers: msg.followers || [] })
+            });
+            if (r.ok) result = await r.json();
+          }
+        } catch (_) {}
 
-      $('spy-fl-result').style.display = 'block';
+        $('spy-fl-status').style.display = 'none';
 
-      if (msg.left?.length > 0) {
-        $('spy-fl-left-section').style.display = 'block';
-        const leftList = $('spy-fl-left-list');
-        leftList.innerHTML = '';
-        msg.left.slice(0, 50).forEach(u => {
-          const a = document.createElement('a');
-          a.className = 'user-item';
-          a.href = `https://www.instagram.com/${u}/`;
-          a.target = '_blank';
-          a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-unfollower">Saiu</span></div>`;
-          leftList.appendChild(a);
-        });
-      }
+        const total      = result?.total ?? (msg.followers?.length || 0);
+        const prev_total = result?.prev_total ?? 0;
+        const is_new     = result?.is_new ?? true;
+        const joined     = result?.joined ?? [];
+        const left       = result?.left ?? [];
 
-      if (msg.joined?.length > 0) {
-        $('spy-fl-joined-section').style.display = 'block';
-        const joinedList = $('spy-fl-joined-list');
-        joinedList.innerHTML = '';
-        msg.joined.slice(0, 50).forEach(u => {
-          const a = document.createElement('a');
-          a.className = 'user-item';
-          a.href = `https://www.instagram.com/${u}/`;
-          a.target = '_blank';
-          a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-new">Novo</span></div>`;
-          joinedList.appendChild(a);
-        });
-      }
+        $('spy-fl-left-count').textContent   = left.length;
+        $('spy-fl-joined-count').textContent = joined.length;
+        $('spy-fl-msg').textContent = !result
+          ? 'Nao foi possivel salvar no servidor. Verifique sua conexao/login.'
+          : is_new
+            ? `Primeiro snapshot salvo com ${total.toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
+            : `Comparado com snapshot anterior (${prev_total.toLocaleString('pt-BR')} seguidores)`;
+
+        $('spy-fl-result').style.display = 'block';
+
+        if (left.length > 0) {
+          $('spy-fl-left-section').style.display = 'block';
+          const leftList = $('spy-fl-left-list');
+          leftList.innerHTML = '';
+          left.slice(0, 50).forEach(u => {
+            const a = document.createElement('a');
+            a.className = 'user-item';
+            a.href = `https://www.instagram.com/${u}/`;
+            a.target = '_blank';
+            a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-unfollower">Saiu</span></div>`;
+            leftList.appendChild(a);
+          });
+        }
+
+        if (joined.length > 0) {
+          $('spy-fl-joined-section').style.display = 'block';
+          const joinedList = $('spy-fl-joined-list');
+          joinedList.innerHTML = '';
+          joined.slice(0, 50).forEach(u => {
+            const a = document.createElement('a');
+            a.className = 'user-item';
+            a.href = `https://www.instagram.com/${u}/`;
+            a.target = '_blank';
+            a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-new">Novo</span></div>`;
+            joinedList.appendChild(a);
+          });
+        }
+      })();
     }
 
     if (msg.action === 'spy_fl_error') {

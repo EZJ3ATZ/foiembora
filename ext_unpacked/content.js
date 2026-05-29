@@ -153,31 +153,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         chrome.runtime.sendMessage({ action: 'status', text: `Buscando @${targetUsername}...` });
         const info = await getProfileInfo(targetUsername);
 
-        // Envia para o backend (NÃO derruba o spy se falhar — degradação suave)
-        const stored = await chrome.storage.local.get('access_token');
-        const token  = stored.access_token;
-        let backendResult = null;
-        if (token) {
-          try {
-            chrome.runtime.sendMessage({ action: 'status', text: 'Salvando no servidor...' });
-            const r = await fetch('https://foiembora.up.railway.app/api/spy/update', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token, ...info })
-            });
-            if (r.ok) backendResult = await r.json();
-          } catch (_) {
-            // Falha de sync (ex.: cross-origin no Orion/iOS) — ainda mostra os dados do perfil
-          }
-        }
-
-        chrome.runtime.sendMessage({
-          action: 'spy_result',
-          info,
-          diff:         backendResult?.diff ?? null,
-          prev_followers: backendResult?.prev_followers ?? null,
-          is_new:       backendResult?.is_new ?? true,
-        });
+        // NÃO fazemos o POST aqui: o content script roda na origem instagram.com e
+        // no Orion/iOS o fetch cross-origin p/ foiembora é bloqueado. Mandamos os dados
+        // crus para o POPUP, que fala com o foiembora pela origem da extensão (funciona).
+        chrome.runtime.sendMessage({ action: 'spy_result', info });
       } catch (err) {
         chrome.runtime.sendMessage({ action: 'error', text: err.message });
       }
@@ -207,34 +186,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const followerList = await paginate(`/api/v1/friendships/${info.user_id}/followers/`);
         const followerUsernames = followerList.map(u => u.username);
 
-        const stored = await chrome.storage.local.get('access_token');
-        const token  = stored.access_token;
-        if (!token) throw new Error('Extensao nao conectada. Faca login no FoiEmbora.');
-
-        // Sync com o servidor para calcular diff (quem chegou/saiu).
-        // Se falhar (ex.: cross-origin no Orion/iOS), mostra ao menos o total atual.
-        let result = null;
-        try {
-          chrome.runtime.sendMessage({ action: 'spy_fl_status', text: 'Salvando snapshot no servidor...' });
-          const r = await fetch('https://foiembora.up.railway.app/api/spy/follower_snapshot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, username: targetUsername, followers: followerUsernames })
-          });
-          if (r.ok) result = await r.json();
-        } catch (_) {
-          // sync falhou — segue com dados locais
-        }
-
+        // POST de snapshot é feito pelo POPUP (origem da extensão fala com foiembora;
+        // o content script em instagram.com é bloqueado no Orion). Mandamos a lista crua.
         chrome.runtime.sendMessage({
           action: 'spy_followers_result',
           username: targetUsername,
           info,
-          total: result?.total ?? followerUsernames.length,
-          prev_total: result?.prev_total ?? null,
-          is_new: result?.is_new ?? true,
-          joined: result?.joined ?? [],
-          left: result?.left ?? [],
+          followers: followerUsernames,
         });
       } catch (err) {
         chrome.runtime.sendMessage({ action: 'spy_fl_error', text: err.message });
