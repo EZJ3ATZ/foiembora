@@ -61,6 +61,23 @@
           >
         </div>
 
+        <div style="margin-bottom:1.25rem">
+          <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.4rem">
+            Chave HikerAPI (preview + spy do Instagram)
+            {% if hiker_configured %}<span style="color:#22c55e;font-size:0.72rem">● configurada</span>{% else %}<span style="color:#f59e0b;font-size:0.72rem">● não configurada</span>{% endif %}
+          </label>
+          <input
+            type="password"
+            name="hiker_key"
+            placeholder="cole aqui a access key da hikerapi.com/tokens"
+            value="{{ hiker_key_saved }}"
+            style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.85rem;font-family:monospace"
+          >
+          <div style="font-size:0.74rem;color:var(--dim);margin-top:0.3rem">
+            Necessária para buscar dados públicos do Instagram (o servidor é bloqueado sem ela). Pegue em <code style="color:var(--purple)">hikerapi.com/tokens</code>
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="width:100%">Salvar configurações</button>
       </form>
     </div>
