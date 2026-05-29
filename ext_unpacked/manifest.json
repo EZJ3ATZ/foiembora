@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "FoiEmbora — Quem não te segue no Instagram",
+  "version": "1.0.0",
+  "description": "Descubra quem não te segue de volta no Instagram. Sem senha, sem risco.",
+  "permissions": ["activeTab", "tabs", "storage"],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://i.instagram.com/*",
+    "https://*.cdninstagram.com/*",
+    "https://*.fbcdn.net/*",
+    "https://foiembora.up.railway.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://foiembora.up.railway.app/*"],
+      "js": ["foiembora_cs.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
