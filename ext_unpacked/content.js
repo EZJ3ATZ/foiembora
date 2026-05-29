@@ -57,30 +57,83 @@ async function paginate(url) {
   return list;
 }
 
-async function getProfileInfo(username) {
-  /**
-   * Busca info publica de um perfil usando a sessao autenticada do usuario.
-   * Funciona para qualquer perfil publico.
-   */
-  // URL relativa = mesma origem da aba (www.instagram.com). Usar i.instagram.com
-  // aqui é cross-origin e o navegador bloqueia ("Load failed").
+async function resolveUserId(username) {
+  // Resolve @username -> user id usando a busca da propria sessao (mesma origem).
   const resp = await fetch(
-    `/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+    `/web/search/topsearch/?context=blended&query=${encodeURIComponent(username)}`,
     { headers: getHeaders(), credentials: 'include' }
   );
-  if (!resp.ok) throw new Error(`Perfil @${username} nao encontrado ou conta privada`);
+  if (!resp.ok) throw new Error(`busca topsearch falhou (${resp.status})`);
   const data = await resp.json();
-  const u = data.data?.user;
-  if (!u) throw new Error(`Perfil @${username} nao encontrado`);
+  const alvo = (data.users || []).find(
+    x => (x.user?.username || '').toLowerCase() === username.toLowerCase()
+  );
+  return alvo?.user?.pk || alvo?.user?.id || null;
+}
+
+async function infoById(userId) {
+  // Endpoint que o modo "minha conta" ja usa com sucesso -> confiavel no WebKit/Orion.
+  const resp = await fetch(`/api/v1/users/${userId}/info/`, {
+    headers: getHeaders(), credentials: 'include'
+  });
+  if (!resp.ok) throw new Error(`users/${userId}/info falhou (${resp.status})`);
+  const u = (await resp.json()).user;
+  if (!u) throw new Error('info vazio');
   return {
     username:        u.username,
     full_name:       u.full_name || '',
-    followers:       u.edge_followed_by?.count ?? 0,
-    following:       u.edge_follow?.count ?? 0,
+    followers:       u.follower_count ?? 0,
+    following:       u.following_count ?? 0,
     is_private:      u.is_private || false,
     profile_pic_url: u.profile_pic_url || '',
-    user_id:         u.id,
+    user_id:         String(userId),
   };
+}
+
+async function getProfileInfo(username) {
+  /**
+   * Busca info publica de um perfil usando a sessao autenticada do usuario.
+   * 1) tenta web_profile_info (mais rico)
+   * 2) fallback: resolve id (topsearch) + users/{id}/info  -> mesmo caminho do "minha conta"
+   */
+  username = (username || '').trim().replace(/^@/, '');
+  const erros = [];
+
+  // 1) web_profile_info (relativo, mesma origem)
+  try {
+    const resp = await fetch(
+      `/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+      { headers: getHeaders(), credentials: 'include' }
+    );
+    if (resp.ok) {
+      const u = (await resp.json()).data?.user;
+      if (u) return {
+        username:        u.username,
+        full_name:       u.full_name || '',
+        followers:       u.edge_followed_by?.count ?? 0,
+        following:       u.edge_follow?.count ?? 0,
+        is_private:      u.is_private || false,
+        profile_pic_url: u.profile_pic_url || '',
+        user_id:         u.id,
+      };
+      erros.push('web_profile_info sem user');
+    } else {
+      erros.push(`web_profile_info ${resp.status}`);
+    }
+  } catch (e) {
+    erros.push(`web_profile_info: ${e.message}`);
+  }
+
+  // 2) fallback robusto: topsearch -> users/{id}/info
+  try {
+    const id = await resolveUserId(username);
+    if (!id) throw new Error('@ nao encontrado na busca');
+    return await infoById(id);
+  } catch (e) {
+    erros.push(`fallback: ${e.message}`);
+  }
+
+  throw new Error(`Nao consegui ler @${username}. (${erros.join(' | ')})`);
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

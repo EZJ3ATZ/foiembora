@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FoiEmbora — Quem não te segue no Instagram",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Descubra quem não te segue de volta no Instagram. Sem senha, sem risco.",
   "permissions": ["activeTab", "tabs", "storage"],
   "host_permissions": [
