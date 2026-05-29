@@ -574,6 +574,38 @@ def _send_token_email(to_email, token, plan):
     except Exception as e:
         app.logger.error(f"[EMAIL] Falha ao enviar para {to_email}: {e}")
 
+def _debug_hiker():
+    """TEMPORÁRIO: diagnóstico da integração HikerAPI em produção. Remover depois."""
+    key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY') or ''
+    out = {
+        'hiker_configured': bool(key),
+        'hiker_key_len': len(key),
+        'source': 'env' if os.getenv('HIKERAPI_KEY') else ('db' if Config.get('HIKERAPI_KEY') else 'none'),
+    }
+    if key:
+        try:
+            r = req_lib.get(
+                'https://api.hikerapi.com/v1/user/by/username',
+                params={'username': 'instagram'},
+                headers={'x-access-key': key, 'accept': 'application/json'},
+                timeout=20,
+            )
+            out['hiker_http'] = r.status_code
+            out['hiker_body_head'] = r.text[:200]
+        except Exception as e:
+            out['hiker_exc'] = repr(e)
+    prof = _ig_profile('instagram')
+    out['ig_profile_ok'] = bool(prof)
+    if prof:
+        out['ig_profile_followers'] = prof.get('followers')
+    return jsonify(out)
+
+
+@app.route('/api/_debug_hiker')
+def debug_hiker_route():
+    return _debug_hiker()
+
+
 # ─── API PREVIEW PÚBLICO (landing page teaser) ───────────────────────────────
 @app.route('/api/preview/<username>')
 def ig_preview(username):
