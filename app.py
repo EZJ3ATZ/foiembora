@@ -620,7 +620,7 @@ def ig_preview(username):
     try:
         ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
               'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
-        resp = requests.get(
+        resp = req_lib.get(
             f'https://www.instagram.com/{username}/',
             headers={
                 'User-Agent': ua,
