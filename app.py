@@ -93,62 +93,21 @@ def instagram_profile():
     if not username:
         return jsonify({'error': 'Username required'}), 400
 
-    def _try_fetch(url, headers):
-        r = req_lib.get(url, headers=headers, timeout=8)
-        if r.status_code != 200:
-            return None
-        return r.json()
-
-    # Headers realistas de browser desktop
-    h1 = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Language': 'pt-BR,pt;q=0.9',
-        'x-ig-app-id': '936619743392459',
-        'Referer': f'https://www.instagram.com/{username}/',
-        'Origin': 'https://www.instagram.com',
-        'sec-fetch-site': 'same-site',
-        'sec-fetch-mode': 'cors',
-    }
-    # Headers mobile como fallback
-    h2 = {
-        'User-Agent': 'Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; ONEPLUS A3003; OnePlus3; qcom; pt_BR; 314665256)',
-        'Accept-Language': 'pt-BR',
-        'x-ig-app-id': '936619743392459',
-    }
-
-    try:
-        url1 = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
-        data = _try_fetch(url1, h1) or _try_fetch(url1, h2)
-
-        if not data:
-            # Fallback: scraping da página pública
-            page = req_lib.get(f'https://www.instagram.com/{username}/', headers=h1, timeout=8)
-            import re as _re
-            m = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
-            m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', page.text)
-            mn = _re.search(r'"username":"([^"]+)"', page.text)
-            if m and m2:
-                return jsonify({
-                    'username':   mn.group(1) if mn else username,
-                    'full_name':  '',
-                    'followers':  int(m.group(1)),
-                    'following':  int(m2.group(1)),
-                    'is_private': False,
-                })
-            return jsonify({'error': 'Perfil não encontrado, privado ou Instagram indisponível'}), 404
-
-        u = data['data']['user']
+    # Aceita contagens vindas do cliente (extensão/sessão logada) — caminho grátis e 100%
+    cf = request.args.get('followers')
+    cg = request.args.get('following')
+    if cf is not None and str(cf).isdigit():
         return jsonify({
-            'username':   u['username'],
-            'full_name':  u.get('full_name', ''),
-            'followers':  u['edge_followed_by']['count'],
-            'following':  u['edge_follow']['count'],
-            'is_private': u.get('is_private', False),
+            'username': username, 'full_name': '',
+            'followers': int(cf), 'following': int(cg) if (cg and str(cg).isdigit()) else 0,
+            'is_private': False, 'photo_url': '', 'source': 'client',
         })
-    except Exception as e:
-        app.logger.error(f'IG profile error: {e}')
-        return jsonify({'error': 'Erro ao buscar perfil. Tente novamente.'}), 500
+
+    info = _ig_profile(username)
+    if not info:
+        return jsonify({'error': 'Perfil não encontrado, privado ou Instagram indisponível'}), 404
+    info['source'] = 'server'
+    return jsonify(info)
 
 # ─── AUTH ADMIN ─────────────────────────────────────────────────────────────
 @app.route('/admin/login', methods=['GET','POST'])
@@ -612,63 +571,26 @@ def _send_token_email(to_email, token, plan):
 # ─── API PREVIEW PÚBLICO (landing page teaser) ───────────────────────────────
 @app.route('/api/preview/<username>')
 def ig_preview(username):
-    """Busca foto + contagem de um perfil público do Instagram via OG meta tags."""
+    """Teaser público da landing: foto + contagem de um perfil do Instagram.
+    Usa a fonte única _ig_profile (HikerAPI em produção)."""
     import re as _re
     username = username.strip().lstrip('@').lower()
     if not username or not _re.match(r'^[\w.]{1,30}$', username):
         return jsonify({'ok': False, 'error': 'username inválido'}), 400
-    try:
-        ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
-              'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
-        resp = req_lib.get(
-            f'https://www.instagram.com/{username}/',
-            headers={
-                'User-Agent': ua,
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-            },
-            timeout=8,
-            allow_redirects=True
-        )
-        html = resp.text
 
-        def og(prop):
-            m = _re.search(rf'<meta[^>]+property=["\']og:{prop}["\'][^>]+content=["\']([^"\']+)["\']', html)
-            if not m:
-                m = _re.search(rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:{prop}["\']', html)
-            return m.group(1) if m else None
-
-        photo   = og('image')
-        title   = og('title') or username
-        desc    = og('description') or ''
-
-        # Description costuma ser: "XX Followers, XX Following, XX Posts – Ver..."
-        followers = None
-        m = _re.search(r'([\d,\.]+)\s*[Ff]ollowers?', desc)
-        if m:
-            followers = m.group(1).replace('.','').replace(',','')
-        following = None
-        m2 = _re.search(r'([\d,\.]+)\s*[Ff]ollowing', desc)
-        if m2:
-            following = m2.group(1).replace('.','').replace(',','')
-
-        # Limpa o título (remove " • Instagram" etc)
-        display_name = _re.sub(r'\s*[•·|@]\s*Instagram.*$', '', title).strip()
-
-        return jsonify({
-            'ok': True,
-            'username': username,
-            'display_name': display_name,
-            'photo_url': photo,
-            'followers': followers,
-            'following': following,
-        })
-    except Exception as e:
-        app.logger.warning(f'[preview] {username}: {e}')
+    info = _ig_profile(username)
+    if not info:
         return jsonify({'ok': False, 'username': username})
+
+    return jsonify({
+        'ok': True,
+        'username': info['username'],
+        'display_name': info['full_name'] or info['username'],
+        'photo_url': info['photo_url'],
+        'followers': info['followers'],
+        'following': info['following'],
+        'is_private': info['is_private'],
+    })
 
 # ─── API SPY VIA SESSÃO (extensão envia contagem de perfis monitorados) ───────
 @app.route('/api/spy/update', methods=['POST'])
@@ -880,11 +802,45 @@ def _get_current_user():
         return None
     return User.query.filter_by(email=email).first()
 
-def _fetch_ig_counts(username):
-    """Busca contagem de seguidores de um perfil público. Retorna dict ou None."""
-    import re as _re
+def _ig_profile(username):
+    """FONTE ÚNICA de dados de perfil público do Instagram.
+    Retorna {username, full_name, followers, following, is_private, photo_url} ou None.
 
-    scraperapi_key = os.getenv('SCRAPERAPI_KEY') or Config.get('SCRAPERAPI_KEY')
+    Ordem de tentativa (do mais confiável ao 'de graça'):
+      1) HikerAPI  — proxy residencial gerenciado (100% mesmo em datacenter). Pago.
+      2) ScraperAPI — proxy residencial rotativo (se configurado).
+      3) Direto na API web_profile_info (só funciona em IP residencial).
+      4) Scraping do HTML público.
+    O servidor do Railway é datacenter, então sem (1) ou (2) o IG bloqueia tudo.
+    """
+    import re as _re
+    username = (username or '').strip().lstrip('@').lower()
+    if not username:
+        return None
+
+    hiker_key   = os.getenv('HIKERAPI_KEY')   or Config.get('HIKERAPI_KEY')
+    scraper_key = os.getenv('SCRAPERAPI_KEY') or Config.get('SCRAPERAPI_KEY')
+
+    def _norm(u):
+        """Normaliza tanto o schema da HikerAPI quanto o do web_profile_info."""
+        if not isinstance(u, dict):
+            return None
+        followers = u.get('follower_count')
+        if followers is None and isinstance(u.get('edge_followed_by'), dict):
+            followers = u['edge_followed_by'].get('count')
+        following = u.get('following_count')
+        if following is None and isinstance(u.get('edge_follow'), dict):
+            following = u['edge_follow'].get('count')
+        if followers is None:
+            return None
+        return {
+            'username':   u.get('username') or username,
+            'full_name':  u.get('full_name') or '',
+            'followers':  int(followers),
+            'following':  int(following or 0),
+            'is_private': bool(u.get('is_private', False)),
+            'photo_url':  u.get('profile_pic_url_hd') or u.get('profile_pic_url') or '',
+        }
 
     h1 = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -892,75 +848,79 @@ def _fetch_ig_counts(username):
         'x-ig-app-id': '936619743392459',
         'Referer': f'https://www.instagram.com/{username}/',
     }
-
     ig_url = f'https://i.instagram.com/api/v1/users/web_profile_info/?username={username}'
 
-    def _parse_api_response(data):
+    # 1) HikerAPI — caminho confiável em produção (datacenter)
+    if hiker_key:
         try:
-            u = data['data']['user']
-            return {
-                'username':   u['username'],
-                'followers':  u['edge_followed_by']['count'],
-                'following':  u['edge_follow']['count'],
-                'is_private': u.get('is_private', False),
-            }
-        except Exception:
-            return None
+            r = req_lib.get(
+                'https://api.hikerapi.com/v1/user/by/username',
+                params={'username': username},
+                headers={'x-access-key': hiker_key, 'accept': 'application/json'},
+                timeout=20,
+            )
+            if r.status_code == 200:
+                d = r.json()
+                u = d.get('user') if isinstance(d, dict) and 'user' in d else d
+                res = _norm(u)
+                if res:
+                    return res
+            else:
+                app.logger.warning(f'[hikerapi] {username}: status {r.status_code}')
+        except Exception as e:
+            app.logger.warning(f'[hikerapi] {username}: {e}')
 
-    # 1) Tenta direto (funciona em IPs residenciais)
-    try:
-        r = req_lib.get(ig_url, headers=h1, timeout=8)
-        if r.status_code == 200:
-            result = _parse_api_response(r.json())
-            if result:
-                return result
-    except Exception:
-        pass
-
-    # 2) Tenta via ScraperAPI (proxy residencial rotativo)
-    if scraperapi_key:
+    # 2) ScraperAPI (proxy residencial rotativo)
+    if scraper_key:
         try:
             proxy_url = (
-                f'http://api.scraperapi.com?api_key={scraperapi_key}'
+                f'http://api.scraperapi.com?api_key={scraper_key}'
                 f'&url={req_lib.utils.quote(ig_url, safe="")}'
                 f'&render=false&country_code=br'
             )
             r = req_lib.get(proxy_url, headers=h1, timeout=30)
             if r.status_code == 200:
-                result = _parse_api_response(r.json())
-                if result:
-                    return result
+                res = _norm((r.json() or {}).get('data', {}).get('user'))
+                if res:
+                    return res
         except Exception as e:
-            app.logger.warning(f'ScraperAPI error for {username}: {e}')
+            app.logger.warning(f'[scraperapi] {username}: {e}')
 
-        # 2b) ScraperAPI na página HTML do perfil
-        try:
-            html_url = f'https://www.instagram.com/{username}/'
-            proxy_url2 = (
-                f'http://api.scraperapi.com?api_key={scraperapi_key}'
-                f'&url={req_lib.utils.quote(html_url, safe="")}'
-                f'&render=false&country_code=br'
-            )
-            r = req_lib.get(proxy_url2, timeout=30)
-            if r.status_code == 200:
-                m  = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', r.text)
-                m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', r.text)
-                if m and m2:
-                    return {'username': username, 'followers': int(m.group(1)), 'following': int(m2.group(1)), 'is_private': False}
-        except Exception as e:
-            app.logger.warning(f'ScraperAPI HTML error for {username}: {e}')
+    # 3) Direto na API (só IP residencial)
+    try:
+        r = req_lib.get(ig_url, headers=h1, timeout=8)
+        if r.status_code == 200:
+            res = _norm((r.json() or {}).get('data', {}).get('user'))
+            if res:
+                return res
+    except Exception:
+        pass
 
-    # 3) Fallback direto na página HTML
+    # 4) Scraping do HTML público
     try:
         page = req_lib.get(f'https://www.instagram.com/{username}/', headers=h1, timeout=8)
         m  = _re.search(r'"edge_followed_by":\{"count":(\d+)\}', page.text)
         m2 = _re.search(r'"edge_follow":\{"count":(\d+)\}', page.text)
+        mn = _re.search(r'"full_name":"([^"]*)"', page.text)
+        mp = _re.search(r'"profile_pic_url(?:_hd)?":"([^"]+)"', page.text)
         if m and m2:
-            return {'username': username, 'followers': int(m.group(1)), 'following': int(m2.group(1)), 'is_private': False}
+            return {
+                'username': username,
+                'full_name': (mn.group(1) if mn else ''),
+                'followers': int(m.group(1)),
+                'following': int(m2.group(1)),
+                'is_private': False,
+                'photo_url': (mp.group(1).replace('\\u0026', '&').replace('\\/', '/') if mp else ''),
+            }
     except Exception:
         pass
 
     return None
+
+
+def _fetch_ig_counts(username):
+    """Compat: alias para _ig_profile (mesmas chaves + extras)."""
+    return _ig_profile(username)
 
 @app.route('/api/monitor/list')
 def monitor_list():
@@ -1009,17 +969,17 @@ def monitor_add():
     if MonitoredProfile.query.filter_by(user_id=user.id, username=username).first():
         return jsonify({'error': 'Perfil já monitorado'}), 409
 
-    # Tenta buscar dados do Instagram (pode falhar em IPs de datacenter)
-    info = _fetch_ig_counts(username)
-
-    # Se o servidor falhou mas o frontend forneceu os dados, usa eles
-    if not info and client_followers is not None:
+    # CAMINHO PRIMÁRIO (grátis): contagens da sessão logada do usuário (extensão/favorito)
+    if client_followers is not None:
         info = {
             'username': username,
             'followers': int(client_followers),
             'following': int(client_following or 0),
             'is_private': False
         }
+    else:
+        # Fallback: busca no servidor via HikerAPI (_ig_profile)
+        info = _ig_profile(username)
 
     profile = MonitoredProfile(user_id=user.id, username=username)
     db.session.add(profile)

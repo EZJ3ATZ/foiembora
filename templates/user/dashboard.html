@@ -404,33 +404,15 @@ function toggleHistory(username) {
   if (el) el.classList.toggle('open');
 }
 
-// ── Spy: busca dados do IG via proxy público (fallback quando servidor é bloqueado) ──
+// ── Spy: busca dados do IG pelo servidor (HikerAPI) ──
 async function fetchIGCountsClientSide(username) {
   try {
-    // Tenta através do nosso servidor primeiro
     const r = await fetch('/api/instagram/profile?username=' + encodeURIComponent(username));
     const d = await r.json();
-    if (!d.error) return { followers: d.followers, following: d.following };
-  } catch(e) {}
-
-  // Fallback: tenta via allorigins.win (CORS proxy)
-  try {
-    const proxyUrl = 'https://api.allorigins.win/get?url=' +
-      encodeURIComponent('https://i.instagram.com/api/v1/users/web_profile_info/?username=' + username);
-    const pr = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-    if (pr.ok) {
-      const pd = await pr.json();
-      const igData = JSON.parse(pd.contents);
-      const u = igData?.data?.user;
-      if (u) {
-        return {
-          followers: u.edge_followed_by?.count || 0,
-          following: u.edge_follow?.count || 0
-        };
-      }
+    if (!d.error && d.followers != null) {
+      return { followers: d.followers, following: d.following };
     }
   } catch(e) {}
-
   return null;
 }
 
