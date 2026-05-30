@@ -1228,10 +1228,35 @@ def _spy_audit_debug_impl():
     if not hiker_key:
         return Response('<h2>HIKERAPI_KEY nao configurada no servidor.</h2>', mimetype='text/html')
 
-    user_id, rep_count, is_private = _hiker_user_id(username)
+    # Resolucao do user_id INSTRUMENTADA (mostra status + corpo cru da HikerAPI).
+    resolve_log = []
+    user_id = None
+    rep_count = 0
+    is_private = False
+    try:
+        rr = req_lib.get('https://api.hikerapi.com/v1/user/by/username',
+                         params={'username': username},
+                         headers={'x-access-key': hiker_key, 'accept': 'application/json'},
+                         timeout=20)
+        resolve_log.append(f'/v1/user/by/username -> HTTP {rr.status_code}')
+        resolve_log.append('corpo: ' + (rr.text[:600] if rr.text else '(vazio)'))
+        if rr.status_code == 200:
+            dd = rr.json()
+            uu = dd.get('user') if isinstance(dd, dict) and 'user' in dd else dd
+            if isinstance(uu, dict):
+                pk = uu.get('pk') or uu.get('pk_id') or uu.get('id')
+                user_id = str(pk) if pk else None
+                rep_count = int(uu.get('follower_count') or 0)
+                is_private = bool(uu.get('is_private', False))
+    except Exception as e:
+        resolve_log.append(f'EXCECAO: {e}')
     if not user_id:
-        return Response(f'<h2>@{username}: HikerAPI nao resolveu o user_id (chave/perfil?).</h2>',
-                        mimetype='text/html')
+        import html as _h2
+        return Response(
+            f'<h2>@{username}: HikerAPI nao resolveu o user_id</h2>'
+            f'<pre style="background:#f4f4f4;padding:12px;white-space:pre-wrap;font-size:13px">'
+            + _h2.escape('\n'.join(resolve_log)) + '</pre>',
+            mimetype='text/html')
 
     # UMA paginacao, instrumentada pagina-a-pagina (rapido, sem timeout duplo).
     t0 = _time.time()
