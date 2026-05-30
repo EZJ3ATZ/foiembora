@@ -1215,6 +1215,7 @@ def spy_audit_debug():
 
 def _spy_audit_debug_impl():
     from flask import Response
+    import time as _time, json as _json, html as _html
     user = _get_current_user()
     if not user:
         return Response('<h2>Faca login no painel primeiro: '
@@ -1223,55 +1224,89 @@ def _spy_audit_debug_impl():
     if not username:
         return Response('<h2>Use ?username=perfil na URL</h2>', mimetype='text/html')
 
+    hiker_key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY')
+    if not hiker_key:
+        return Response('<h2>HIKERAPI_KEY nao configurada no servidor.</h2>', mimetype='text/html')
+
     user_id, rep_count, is_private = _hiker_user_id(username)
     if not user_id:
-        return Response(f'<h2>@{username}: HikerAPI nao resolveu o user_id. '
-                        f'Chave configurada? Perfil existe?</h2>', mimetype='text/html')
+        return Response(f'<h2>@{username}: HikerAPI nao resolveu o user_id (chave/perfil?).</h2>',
+                        mimetype='text/html')
 
-    call1 = _hiker_followers(user_id)
-    call2 = _hiker_followers(user_id)
-    s1, s2 = set(call1), set(call2)
-    inter   = s1 & s2
-    only1   = s1 - s2
-    only2   = s2 - s1
-    union   = s1 | s2
+    # UMA paginacao, instrumentada pagina-a-pagina (rapido, sem timeout duplo).
+    t0 = _time.time()
+    out, seen, page_log = [], set(), []
+    page_id = None
+    status_fail = None
+    for p in range(1, 81):
+        params = {'user_id': str(user_id)}
+        if page_id:
+            params['page_id'] = page_id
+        try:
+            r = req_lib.get('https://api.hikerapi.com/v2/user/followers',
+                            params=params,
+                            headers={'x-access-key': hiker_key, 'accept': 'application/json'},
+                            timeout=15)
+        except Exception as e:
+            page_log.append(f'pag {p}: EXCECAO {e}')
+            break
+        if r.status_code != 200:
+            status_fail = r.status_code
+            page_log.append(f'pag {p}: HTTP {r.status_code} :: {r.text[:200]}')
+            break
+        d = r.json() or {}
+        users = d.get('users')
+        if users is None and isinstance(d.get('response'), dict):
+            users = d['response'].get('users')
+        n_page = len(users or [])
+        for u in (users or []):
+            un = (u.get('username') or '').lower() if isinstance(u, dict) else ''
+            if un and un not in seen:
+                seen.add(un)
+                out.append(un)
+        nxt = d.get('next_page_id') or (d.get('response') or {}).get('next_page_id')
+        page_log.append(f'pag {p}: +{n_page} (acum {len(out)}) next={"sim" if nxt else "NAO"}')
+        page_id = nxt
+        if not page_id:
+            break
+    elapsed = _time.time() - t0
+
+    curr = set(out)
+    prev = SpyFollowerSnapshot.query.filter_by(user_id=user.id, ig_username=username)\
+        .order_by(SpyFollowerSnapshot.created_at.desc()).first()
+    prev_set = set(_json.loads(prev.followers)) if prev else set()
+    joined = curr - prev_set
+    left   = prev_set - curr
 
     def pct(n, d):
         return f'{(100.0 * n / d):.1f}%' if d else '—'
 
     rows = [
         ('Seguidores reportados (perfil)', rep_count),
-        ('Chamada 1 — capturou', len(s1)),
-        ('Chamada 2 — capturou', len(s2)),
-        ('Em AMBAS (estável)', len(inter)),
-        ('Só na chamada 1', len(only1)),
-        ('Só na chamada 2', len(only2)),
-        ('União das duas', len(union)),
-        ('Estabilidade (ambas ÷ união)', pct(len(inter), len(union))),
-        ('Completude média vs reportado', pct((len(s1) + len(s2)) // 2, rep_count)),
+        ('Esta captura trouxe', len(curr)),
+        ('Completude vs reportado', pct(len(curr), rep_count)),
+        ('Paginas puxadas', len(page_log)),
+        ('Tempo total', f'{elapsed:.1f}s'),
+        ('HTTP de falha (se houve)', status_fail or '—'),
+        ('Snapshot salvo anterior', (len(prev_set) if prev else 'nenhum')),
+        ('Apareceriam como NOVOS', len(joined)),
+        ('Apareceriam como SAIRAM', len(left)),
     ]
-    estavel = bool(union) and len(inter) >= len(union) * 0.97
-    veredito = (
-        '✅ HikerAPI ESTÁVEL — a lista é confiável, o "tanto de seguidores" não vem daqui.'
-        if estavel else
-        '🔴 HikerAPI INSTÁVEL — cada chamada traz gente diferente. É ISSO que gera os '
-        'seguidores fantasmas. A trava de 85% é frouxa demais; precisa exigir lista completa.'
-    )
-    color = 'green' if estavel else '#c0392b'
-
-    sample1 = ', '.join(list(only1)[:15]) or '—'
-    sample2 = ', '.join(list(only2)[:15]) or '—'
     body = ''.join(f'<tr><td style="padding:6px 12px;border:1px solid #ccc">{k}</td>'
                    f'<td style="padding:6px 12px;border:1px solid #ccc;font-weight:bold">{v}</td></tr>'
                    for k, v in rows)
+    log_html = _html.escape('\n'.join(page_log))
+    sample_j = ', '.join(list(joined)[:15]) or '—'
+    sample_l = ', '.join(list(left)[:15]) or '—'
     html = f"""<!doctype html><html><head><meta charset="utf-8">
 <title>Audit debug @{username}</title></head>
-<body style="font-family:system-ui;max-width:760px;margin:24px auto;padding:0 16px">
+<body style="font-family:system-ui;max-width:820px;margin:24px auto;padding:0 16px">
 <h2>Diagnóstico HikerAPI — @{username}</h2>
-<p style="font-size:18px;color:{color};font-weight:bold">{veredito}</p>
 <table style="border-collapse:collapse;margin:16px 0">{body}</table>
-<p><b>Só na chamada 1 (sumiram na 2):</b><br>{sample1}</p>
-<p><b>Só na chamada 2 (não tinham na 1):</b><br>{sample2}</p>
+<h3>Log de paginação</h3>
+<pre style="background:#f4f4f4;padding:12px;white-space:pre-wrap;font-size:13px">{log_html}</pre>
+<p><b>Apareceriam como NOVOS:</b><br>{sample_j}</p>
+<p><b>Apareceriam como SAIRAM:</b><br>{sample_l}</p>
 </body></html>"""
     return Response(html, mimetype='text/html')
 
