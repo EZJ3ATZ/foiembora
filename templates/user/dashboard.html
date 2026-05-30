@@ -74,11 +74,19 @@
     .spy-loading{font-size:0.82rem;color:var(--muted);padding:0.5rem 0;display:none}
     .spy-error{font-size:0.82rem;color:var(--red);padding:0.5rem 0;display:none}
     .limit-info{font-size:0.78rem;color:var(--dim);margin-bottom:1rem}
+    .change-date{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;padding:0.7rem 0 0.3rem;border-top:1px solid var(--border);margin-top:0.4rem}
+    .change-date:first-child{border-top:none;margin-top:0;padding-top:0.2rem}
     @media(max-width:768px){
       .stats{grid-template-columns:1fr 1fr}.main-tabs{flex-direction:column}
       .spy-add{flex-direction:column;align-items:stretch}.btn-spy{width:100%;text-align:center}
+      .profile-card-header{flex-wrap:wrap}.profile-actions{width:100%;margin-top:0.6rem;justify-content:flex-end}
+      table{font-size:0.8rem}th,td{padding:0.5rem 0.4rem}
     }
-    @media(max-width:480px){.stats{grid-template-columns:1fr}}
+    @media(max-width:480px){
+      .stats{grid-template-columns:1fr}
+      .user-row .badge-red,.user-row .badge-green{font-size:0.68rem;padding:2px 7px}
+      .username{font-size:0.85rem}
+    }
   </style>
 </head>
 <body>
@@ -233,15 +241,20 @@
 
     <div class="section-title">👻 Quem parou de te seguir</div>
     <div class="card-box">
-      {% if latest and latest.unfollowers %}
+      {% set ns = namespace(any_unf=false) %}
+      {% for h in history %}{% if h.unfollowers %}{% set ns.any_unf = true %}{% endif %}{% endfor %}
+      {% if ns.any_unf %}
         <div class="card-box-body">
-          {% for u in latest.unfollowers %}
-          <div class="user-row">
-            <div class="avatar" style="background:linear-gradient(135deg,#833ab4,#fd1d1d)">{{ u[0] | upper }}</div>
-            <div class="username">@{{ u }}</div>
-            <div style="margin-left:auto"><span class="badge-red">deixou de seguir</span></div>
-          </div>
-          {% endfor %}
+          {% for h in history %}{% if h.unfollowers %}
+            <div class="change-date">📅 {{ h.date }}</div>
+            {% for u in h.unfollowers %}
+            <div class="user-row">
+              <div class="avatar" style="background:linear-gradient(135deg,#833ab4,#fd1d1d)">{{ u[0] | upper }}</div>
+              <div class="username">@{{ u }}</div>
+              <div style="margin-left:auto"><span class="badge-red">saiu em {{ h.date }}</span></div>
+            </div>
+            {% endfor %}
+          {% endif %}{% endfor %}
         </div>
       {% elif history | length < 2 %}
         <div class="empty">
@@ -257,17 +270,22 @@
       {% endif %}
     </div>
 
-    {% if latest and latest.new_followers %}
+    {% set nf = namespace(any_new=false) %}
+    {% for h in history %}{% if h.new_followers %}{% set nf.any_new = true %}{% endif %}{% endfor %}
+    {% if nf.any_new %}
     <div class="section-title">🆕 Novos seguidores</div>
     <div class="card-box">
       <div class="card-box-body">
-        {% for u in latest.new_followers %}
-        <div class="user-row">
-          <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">{{ u[0] | upper }}</div>
-          <div class="username">@{{ u }}</div>
-          <div style="margin-left:auto"><span class="badge-green">novo seguidor</span></div>
-        </div>
-        {% endfor %}
+        {% for h in history %}{% if h.new_followers %}
+          <div class="change-date">📅 {{ h.date }}</div>
+          {% for u in h.new_followers %}
+          <div class="user-row">
+            <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">{{ u[0] | upper }}</div>
+            <div class="username">@{{ u }}</div>
+            <div style="margin-left:auto"><span class="badge-green">entrou em {{ h.date }}</span></div>
+          </div>
+          {% endfor %}
+        {% endif %}{% endfor %}
       </div>
     </div>
     {% endif %}

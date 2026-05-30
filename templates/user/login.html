@@ -9,15 +9,16 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Inter',sans-serif;background:#09090b;color:#f4f4f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
     .card{background:#18181c;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2.5rem;width:100%;max-width:420px}
-    .logo{display:flex;align-items:center;gap:0.6rem;font-weight:800;font-size:1.2rem;justify-content:center;margin-bottom:2rem;text-decoration:none;color:#f4f4f5}
+    .logo{display:flex;align-items:center;gap:0.6rem;font-weight:800;font-size:1.2rem;justify-content:center;margin-bottom:1.5rem;text-decoration:none;color:#f4f4f5}
     .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-    h1{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:0.4rem}
-    .sub{font-size:0.875rem;color:#71717a;text-align:center;margin-bottom:1.75rem;line-height:1.6}
+    h1{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:0.5rem}
+    .sub{font-size:0.9rem;color:#a1a1aa;text-align:center;margin-bottom:1.25rem;line-height:1.6}
+    .safe-note{display:flex;align-items:center;gap:0.5rem;justify-content:center;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#4ade80;font-size:0.78rem;font-weight:600;padding:0.6rem 0.8rem;border-radius:10px;margin-bottom:1.5rem;text-align:center;line-height:1.4}
     .field{margin-bottom:1rem}
-    label{font-size:0.8rem;color:#a1a1aa;display:block;margin-bottom:0.4rem;font-weight:500}
-    input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.75rem 1rem;color:#f4f4f5;font-size:0.9rem;font-family:inherit;outline:none;transition:border-color 0.2s}
+    label{font-size:0.85rem;color:#d4d4d8;display:block;margin-bottom:0.4rem;font-weight:600}
+    input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.9rem 1rem;color:#f4f4f5;font-size:1rem;font-family:inherit;outline:none;transition:border-color 0.2s}
     input:focus{border-color:rgba(168,85,247,0.5)}
-    .btn{display:block;width:100%;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;padding:0.875rem;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:1.25rem}
+    .btn{display:block;width:100%;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;padding:1rem;border-radius:10px;font-weight:800;font-size:1.05rem;cursor:pointer;margin-top:1.25rem}
     .divider{text-align:center;color:#3f3f46;font-size:0.75rem;margin:1.25rem 0;position:relative}
     .divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:rgba(255,255,255,0.07)}
     .divider::before{left:0}.divider::after{right:0}
@@ -35,7 +36,9 @@
     FoiEmbora
   </a>
   <h1>Entrar na minha conta</h1>
-  <p class="sub">Use o e-mail e senha que você cadastrou ao comprar.</p>
+  <p class="sub">Acesse o painel para ver quem deixou de te seguir.<br>Use o <b>e-mail e senha</b> que você criou na compra.</p>
+
+  <div class="safe-note">🔒 Não pedimos a senha do seu Instagram. 100% seguro.</div>
 
   {% with msgs = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in msgs %}
