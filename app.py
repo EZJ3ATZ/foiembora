@@ -1055,6 +1055,148 @@ def _fetch_ig_counts(username):
     """Compat: alias para _ig_profile (mesmas chaves + extras)."""
     return _ig_profile(username)
 
+
+def _hiker_user_id(username):
+    """Resolve o @ -> (user_id, follower_count, is_private) via HikerAPI.
+    Retorna (None, 0, False) se não achar/sem chave."""
+    hiker_key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY')
+    if not hiker_key:
+        return None, 0, False
+    username = (username or '').strip().lstrip('@').lower()
+    try:
+        r = req_lib.get(
+            'https://api.hikerapi.com/v1/user/by/username',
+            params={'username': username},
+            headers={'x-access-key': hiker_key, 'accept': 'application/json'},
+            timeout=20,
+        )
+        if r.status_code == 200:
+            d = r.json()
+            u = d.get('user') if isinstance(d, dict) and 'user' in d else d
+            if isinstance(u, dict):
+                pk = u.get('pk') or u.get('pk_id') or u.get('id')
+                fc = u.get('follower_count') or 0
+                pv = bool(u.get('is_private', False))
+                return (str(pk) if pk else None), int(fc or 0), pv
+        else:
+            app.logger.warning(f'[hiker_user_id] {username}: status {r.status_code}')
+    except Exception as e:
+        app.logger.warning(f'[hiker_user_id] {username}: {e}')
+    return None, 0, False
+
+
+def _hiker_followers(user_id, max_pages=80):
+    """Lista COMPLETA de usernames de seguidores via HikerAPI v2 (paginado por page_id).
+    O navegador trava em ~333 pra contas de terceiros; aqui no servidor não tem esse teto.
+    Retorna lista de usernames (lowercase). [] se falhar."""
+    hiker_key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY')
+    if not hiker_key:
+        return []
+    out, seen = [], set()
+    page_id = None
+    for _ in range(max_pages):
+        params = {'user_id': str(user_id)}
+        if page_id:
+            params['page_id'] = page_id
+        try:
+            r = req_lib.get(
+                'https://api.hikerapi.com/v2/user/followers',
+                params=params,
+                headers={'x-access-key': hiker_key, 'accept': 'application/json'},
+                timeout=30,
+            )
+        except Exception as e:
+            app.logger.warning(f'[hiker_followers] {user_id}: {e}')
+            break
+        if r.status_code != 200:
+            app.logger.warning(f'[hiker_followers] {user_id}: status {r.status_code}')
+            break
+        d = r.json() or {}
+        users = d.get('users')
+        if users is None and isinstance(d.get('response'), dict):
+            users = d['response'].get('users')
+        for u in (users or []):
+            un = (u.get('username') or '').lower() if isinstance(u, dict) else ''
+            if un and un not in seen:
+                seen.add(un)
+                out.append(un)
+        page_id = d.get('next_page_id') or (d.get('response') or {}).get('next_page_id')
+        if not page_id:
+            break
+    return out
+
+
+@app.route('/api/spy/audit', methods=['POST'])
+def spy_audit():
+    """Auditoria da lista de seguidores de TERCEIROS feita 100% no servidor via HikerAPI.
+    O navegador (extensão) não passa de ~333 seguidores pra contas de terceiros — teto do
+    Instagram. Aqui o servidor puxa a lista completa, salva snapshot e devolve o diff."""
+    import json as _json
+    data      = request.json or {}
+    token_str = data.get('token', '')
+    t = AccessToken.query.filter_by(token=token_str).first()
+    if not t or not t.is_valid:
+        return jsonify({'ok': False, 'error': 'Token inválido'}), 401
+
+    username = data.get('username', '').lower().strip().lstrip('@')
+    if not username:
+        return jsonify({'ok': False, 'error': 'username é obrigatório'}), 400
+
+    user_id, rep_count, is_private = _hiker_user_id(username)
+    if not user_id:
+        return jsonify({'ok': False, 'error': 'Perfil não encontrado.'}), 404
+    if is_private:
+        return jsonify({'ok': False, 'error': 'Perfil privado — não é possível auditar seguidores.'}), 400
+    # Trava de custo: cada página da lista é uma chamada paga da HikerAPI. Perfis enormes
+    # custariam caro e raramente são o alvo — pra esses, usar só o modo contagem.
+    if rep_count and rep_count > 5000:
+        return jsonify({'ok': False,
+                        'error': f'Perfil grande demais para auditar a lista ({rep_count:,} seguidores). '
+                                 f'Use o modo contagem para acompanhar este perfil.'.replace(',', '.')}), 400
+
+    followers = _hiker_followers(user_id)
+    n = len(set(followers))
+    if n == 0:
+        return jsonify({'ok': False, 'error': 'Não foi possível puxar a lista agora. Tente de novo em instantes.'}), 502
+    # Guarda: se a HikerAPI parou no meio, não compara (senão inventa fantasma).
+    if rep_count and n < rep_count * 0.85:
+        return jsonify({'ok': False,
+                        'error': f'Lista veio incompleta ({n} de ~{rep_count}). Tente de novo em instantes.'}), 502
+
+    prev = SpyFollowerSnapshot.query.filter_by(
+        user_id=t.user_id, ig_username=username
+    ).order_by(SpyFollowerSnapshot.created_at.desc()).first()
+
+    prev_set = set(_json.loads(prev.followers)) if prev else set()
+    curr_set = set(followers)
+
+    inconsistente = False
+    joined, left = [], []
+    if prev:
+        a, b = len(curr_set), len(prev_set)
+        if max(a, b) > max(min(a, b), 1) * 1.15:
+            inconsistente = True
+        else:
+            joined = list(curr_set - prev_set)
+            left   = list(prev_set - curr_set)
+
+    snap = SpyFollowerSnapshot(
+        user_id=t.user_id, ig_username=username,
+        followers=_json.dumps(sorted(curr_set))
+    )
+    db.session.add(snap)
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'is_new': prev is None,
+        'inconsistente': inconsistente,
+        'total': len(curr_set),
+        'prev_total': len(prev_set),
+        'joined': joined,
+        'left': left,
+    })
+
 @app.route('/api/monitor/list')
 def monitor_list():
     """Retorna lista atualizada de perfis monitorados (usada pelo auto-refresh do dashboard)."""

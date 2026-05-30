@@ -47,19 +47,35 @@ async function getCurrentUser() {
   };
 }
 
-async function paginate(url) {
-  const list = [];
-  let nextMaxId = null;
-  do {
-    const fullUrl = `${url}?count=200${nextMaxId ? '&max_id=' + nextMaxId : ''}`;
-    const resp = await fetch(fullUrl, { headers: getHeaders(), credentials: 'include' });
-    if (!resp.ok) throw new Error('Instagram bloqueou a requisicao. Tente novamente em alguns minutos.');
-    const data = await resp.json();
-    list.push(...(data.users || []));
-    nextMaxId = data.next_max_id || null;
-    if (nextMaxId) await new Promise(r => setTimeout(r, 600));
-  } while (nextMaxId);
-  return list;
+async function paginate(url, expected = 0) {
+  // count=100 (não 200): páginas menores são MUITO mais confiáveis — com 200 o
+  // Instagram costuma cortar a lista no meio e mandar next_max_id vazio (truncava em 331).
+  // Se a captura vier abaixo de 90% do esperado, refaz a paginação inteira (até 3x).
+  const COUNT = 100;
+  let best = [];
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const list = [];
+    const seen = new Set();
+    let nextMaxId = null;
+    do {
+      const fullUrl = `${url}?count=${COUNT}${nextMaxId ? '&max_id=' + nextMaxId : ''}`;
+      const resp = await fetch(fullUrl, { headers: getHeaders(), credentials: 'include' });
+      if (!resp.ok) throw new Error('Instagram bloqueou a requisicao. Tente novamente em alguns minutos.');
+      const data = await resp.json();
+      for (const u of (data.users || [])) {
+        if (u && u.pk != null && !seen.has(u.pk)) { seen.add(u.pk); list.push(u); }
+      }
+      nextMaxId = data.next_max_id || null;
+      if (nextMaxId) await new Promise(r => setTimeout(r, 800));
+    } while (nextMaxId);
+
+    if (list.length > best.length) best = list;
+    // Completa o suficiente (ou sem referência)? entrega.
+    if (!expected || best.length >= expected * 0.9) return best;
+    // Truncou — espera mais e tenta a paginação inteira de novo.
+    if (attempt < 3) await new Promise(r => setTimeout(r, 3000));
+  }
+  return best;
 }
 
 async function resolveUserId(username) {
@@ -188,7 +204,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
 
         chrome.runtime.sendMessage({ action: 'spy_fl_status', text: `Carregando seguidores de @${targetUsername}... (${info.followers.toLocaleString('pt-BR')})` });
-        const followerList = await paginate(`/api/v1/friendships/${info.user_id}/followers/`);
+        const followerList = await paginate(`/api/v1/friendships/${info.user_id}/followers/`, info.followers);
         const followerUsernames = followerList.map(u => u.username);
 
         // GUARDA ANTI-LIXO (mesma do analyze): o Instagram às vezes devolve a lista
@@ -228,13 +244,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const user = await getCurrentUser();
 
       chrome.runtime.sendMessage({ action: 'status', text: 'Carregando quem voce segue...' });
-      const following = await paginate(`/api/v1/friendships/${user.id}/following/`);
+      const following = await paginate(`/api/v1/friendships/${user.id}/following/`, user.following_count);
 
       chrome.runtime.sendMessage({
         action: 'status',
         text: `Carregando seus seguidores... (voce segue ${following.length})`
       });
-      const followers = await paginate(`/api/v1/friendships/${user.id}/followers/`);
+      const followers = await paginate(`/api/v1/friendships/${user.id}/followers/`, user.follower_count);
 
       // GUARDA ANTI-LIXO: o Instagram às vezes injeta contas SUGERIDAS/recomendadas na
       // resposta, inflando a lista (ex: real 889, vem 1116). Se a lista capturada não

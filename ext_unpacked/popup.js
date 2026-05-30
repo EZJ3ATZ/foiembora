@@ -452,33 +452,98 @@ $('btn-spy-refresh')?.addEventListener('click', runSpy);
 // ── Spy — auditoria de seguidores ─────────────────────────────────────────────
 
 async function runSpyFollowers() {
-  const igTab = await getInstagramTab();
-  if (!igTab) {
-    $('spy-fl-error').style.display = 'block';
-    $('spy-fl-error').textContent = 'Abra o Instagram no navegador e faca login primeiro.';
-    return;
-  }
-
   const input    = $('spy-username');
   const username = input.value.trim().replace(/^@/, '');
   if (!username) { input.focus(); return; }
+
+  const stored = await chrome.storage.local.get('access_token');
+  const token  = stored.access_token;
+  if (!token) {
+    $('spy-fl-error').style.display = 'block';
+    $('spy-fl-error').textContent = 'Faca login na FoiEmbora primeiro.';
+    return;
+  }
 
   $('spy-fl-status').style.display      = 'block';
   $('spy-fl-result').style.display      = 'none';
   $('spy-fl-error').style.display       = 'none';
   $('spy-fl-left-section').style.display   = 'none';
   $('spy-fl-joined-section').style.display = 'none';
-  $('spy-fl-status-text').textContent   = `Carregando seguidores de @${username}...`;
+  $('spy-fl-status-text').textContent   = `Auditando seguidores de @${username} no servidor... (pode levar ate 1 min, nao feche)`;
   $('btn-spy-followers').disabled       = true;
 
-  const ok = await sendToIg(igTab, { action: 'spy_followers', username });
-  if (!ok) {
+  // Auditoria de terceiros é feita 100% no SERVIDOR via HikerAPI: o navegador trava em
+  // ~333 seguidores pra contas de terceiros (teto do Instagram). O servidor fura o teto.
+  let result = null;
+  try {
+    const r = await fetch(`${API_BASE}/api/spy/audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, username })
+    });
+    result = await r.json().catch(() => null);
+    if (!r.ok || !result || !result.ok) {
+      throw new Error((result && result.error) || 'Falha na auditoria. Tente de novo.');
+    }
+  } catch (err) {
     $('spy-fl-status').style.display = 'none';
-    $('btn-spy-followers').disabled = false;
-    $('spy-fl-error').style.display = 'block';
-    $('spy-fl-error').textContent = ok === 'not_alive'
-      ? 'Recarregue a pagina do Instagram e tente novamente.'
-      : 'Nao foi possivel conectar. Abra o Instagram e tente novamente.';
+    $('btn-spy-followers').disabled  = false;
+    $('spy-fl-error').style.display  = 'block';
+    $('spy-fl-error').textContent    = err.message;
+    return;
+  }
+
+  $('spy-fl-status').style.display = 'none';
+  $('btn-spy-followers').disabled  = false;
+  renderSpyFollowers(result);
+}
+
+function renderSpyFollowers(result) {
+  const total         = result?.total ?? 0;
+  const prev_total    = result?.prev_total ?? 0;
+  const is_new        = result?.is_new ?? true;
+  const inconsistente = result?.inconsistente ?? false;
+  const joined        = result?.joined ?? [];
+  const left          = result?.left ?? [];
+
+  $('spy-fl-left-count').textContent   = left.length;
+  $('spy-fl-joined-count').textContent = joined.length;
+  $('spy-fl-msg').textContent = is_new
+    ? `Primeiro snapshot salvo com ${total.toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
+    : inconsistente
+      ? `Captura anterior estava incompleta (${prev_total.toLocaleString('pt-BR')} vs ${total.toLocaleString('pt-BR')} agora). Base corrigida — audite de novo para comparar com dados limpos.`
+      : `Comparado com snapshot anterior (${prev_total.toLocaleString('pt-BR')} seguidores)`;
+
+  $('spy-fl-result').style.display = 'block';
+  $('spy-fl-left-section').style.display   = 'none';
+  $('spy-fl-joined-section').style.display = 'none';
+
+  if (left.length > 0) {
+    $('spy-fl-left-section').style.display = 'block';
+    const leftList = $('spy-fl-left-list');
+    leftList.innerHTML = '';
+    left.slice(0, 50).forEach(u => {
+      const a = document.createElement('a');
+      a.className = 'user-item';
+      a.href = `https://www.instagram.com/${u}/`;
+      a.target = '_blank';
+      a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-unfollower">Saiu</span></div>`;
+      leftList.appendChild(a);
+    });
+  }
+
+  if (joined.length > 0) {
+    $('spy-fl-joined-section').style.display = 'block';
+    const joinedList = $('spy-fl-joined-list');
+    joinedList.innerHTML = '';
+    joined.slice(0, 50).forEach(u => {
+      const a = document.createElement('a');
+      a.className = 'user-item';
+      a.href = `https://www.instagram.com/${u}/`;
+      a.target = '_blank';
+      a.innerHTML = `<div class="user-info"><div class="user-username">@${u}</div></div><div class="user-badges"><span class="badge-new">Novo</span></div>`;
+      joinedList.appendChild(a);
+    });
   }
 }
 
