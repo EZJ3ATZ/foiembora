@@ -1,6 +1,16 @@
 import os, json
 import requests as req_lib
-from datetime import timedelta
+from datetime import timedelta, timezone
+
+# Fuso de Brasília (UTC-3, sem horário de verão desde 2019).
+_BR_TZ = timezone(timedelta(hours=-3))
+def br_dt(dt, fmt='%d/%m/%Y %H:%M'):
+    """Converte um datetime (UTC, com ou sem tzinfo) para horário de Brasília e formata."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(_BR_TZ).strftime(fmt)
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
@@ -784,7 +794,7 @@ def snapshot_save():
         curr_followers = set(followers)
         unfollowers    = list(prev_followers - curr_followers)   # pararam de seguir
         new_followers  = list(curr_followers - prev_followers)   # começaram a seguir
-        prev_date      = prev.created_at.strftime('%d/%m/%Y')
+        prev_date      = br_dt(prev.created_at, '%d/%m/%Y')
     else:
         prev_date = None
 
@@ -823,35 +833,59 @@ def snapshot_debug():
     # ordem cronológica (mais antigo -> mais novo)
     snaps = list(reversed(t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(15).all()))
 
-    out = []
+    rows_html = []
     for i, s in enumerate(snaps):
         fol = set(_json.loads(s.followers))
         flw = set(_json.loads(s.following))
-        row = {
-            'idx':          i,
-            'date':         s.created_at.strftime('%d/%m/%Y %H:%M'),
-            'n_followers':  len(fol),
-            'n_following':  len(flw),
-            'overlap_fol_flw': len(fol & flw),  # quantos seguidores você tbm segue
-        }
         if i > 0:
             prev = snaps[i - 1]
             fol_prev = set(_json.loads(prev.followers))
             flw_prev = set(_json.loads(prev.following))
-            unf = fol_prev - fol     # apareceriam como "parou de te seguir"
-            new = fol - fol_prev     # apareceriam como "novo seguidor"
-            row['vs_prev'] = {
-                'unfollowers':            len(unf),
-                'new_followers':          len(new),
-                # TESTE-CHAVE: dos "unfollowers", quantos são gente que você SEGUE
-                # (se for alto -> contaminação followers↔following, não unfollow real)
-                'unf_que_voce_segue_now':  len(unf & flw),
-                'unf_que_voce_segue_prev': len(unf & flw_prev),
-                'unf_sample':             sorted(list(unf))[:12],
-            }
-        out.append(row)
+            unf = fol_prev - fol     # "parou de te seguir"
+            new = fol - fol_prev     # "novo seguidor"
+            n_unf = len(unf)
+            n_seg = len(unf & flw)   # destes, quantos VOCÊ segue (smoking gun)
+            pct = (100 * n_seg // n_unf) if n_unf else 0
+            cor = '#fd6b6b' if pct >= 50 else ('#f59e0b' if pct >= 15 else '#22c55e')
+            # amostra: nome + se você segue essa pessoa
+            sample = []
+            for u in sorted(unf)[:15]:
+                segue = '👉 VOCÊ SEGUE' if u in flw else ''
+                sample.append(f"@{u} <span style='color:#fd6b6b'>{segue}</span>")
+            vs = (f"<b>{n_unf}</b> saíram · <b>{len(new)}</b> novos<br>"
+                  f"<span style='color:{cor}'><b>{n_seg}</b> dos que 'saíram' são gente que VOCÊ segue ({pct}%)</span>"
+                  f"<div style='font-size:11px;color:#a1a1aa;margin-top:6px'>{'<br>'.join(sample)}</div>")
+        else:
+            vs = '<span style="color:#71717a">— (primeira captura)</span>'
+        rows_html.append(
+            f"<tr><td>{i}</td><td>{br_dt(s.created_at)}</td><td><b>{len(fol)}</b></td>"
+            f"<td>{len(flw)}</td><td>{len(fol & flw)}</td><td style='text-align:left'>{vs}</td></tr>"
+        )
 
-    return jsonify({'ok': True, 'token_plan': t.plan, 'n_snapshots': t.snapshots.count(), 'snapshots': out})
+    html = f"""<!DOCTYPE html><html lang=pt-BR><head><meta charset=utf-8>
+<meta name=viewport content='width=device-width,initial-scale=1'>
+<title>Diagnóstico FoiEmbora</title>
+<style>
+body{{font-family:system-ui,sans-serif;background:#09090b;color:#f4f4f5;padding:16px;margin:0}}
+h1{{font-size:18px}} p{{color:#a1a1aa;font-size:13px;line-height:1.5}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
+th,td{{border:1px solid #27272a;padding:8px;text-align:center;vertical-align:top}}
+th{{background:#18181c;color:#a1a1aa;font-size:11px;text-transform:uppercase}}
+.box{{background:#18181c;border:1px solid #27272a;border-radius:12px;padding:14px;margin-bottom:16px}}
+</style></head><body>
+<h1>🔬 Diagnóstico de seguidores</h1>
+<div class=box><p><b>Plano:</b> {t.plan} · <b>Total de capturas:</b> {t.snapshots.count()}<br>
+Coluna-chave: <b>"dos que saíram, quantos você segue"</b>. Se for alto (vermelho), o sistema está
+misturando sua lista de <i>quem você segue</i> com <i>quem te segue</i> — é o bug.</p></div>
+<table>
+<thead><tr><th>#</th><th>Data (Brasília)</th><th>Seguidores<br>(lista)</th><th>Seguindo<br>(lista)</th>
+<th>Você segue<br>E te segue</th><th>vs. captura anterior</th></tr></thead>
+<tbody>{''.join(rows_html)}</tbody>
+</table>
+<p style='margin-top:16px'>📸 Tire um print desta tela inteira e mande pro Matheus/Claude.</p>
+</body></html>"""
+    from flask import Response
+    return Response(html, mimetype='text/html')
 
 @app.route('/api/snapshot/history')
 def snapshot_history():
@@ -866,7 +900,7 @@ def snapshot_history():
 
     snaps = t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(30).all()
     history = [{
-        'date':      s.created_at.strftime('%d/%m/%Y %H:%M'),
+        'date':      br_dt(s.created_at),
         'followers': len(_json.loads(s.followers)),
         'following': len(_json.loads(s.following)),
     } for s in snaps]
@@ -1017,7 +1051,7 @@ def monitor_list():
             'following':  latest.following if latest else 0,
             'is_private': latest.is_private if latest else False,
             'diff':       (latest.followers - prev.followers) if (latest and prev) else None,
-            'last_check': latest.created_at.strftime('%d/%m %H:%M') if latest else None,
+            'last_check': br_dt(latest.created_at, '%d/%m %H:%M') if latest else None,
         })
     return jsonify({'ok': True, 'profiles': result})
 
@@ -1136,7 +1170,7 @@ def monitor_history(username):
     if not profile:
         return jsonify({'error': 'Perfil não encontrado'}), 404
     snaps = profile.snapshots.order_by(ProfileCountSnapshot.created_at.asc()).all()
-    history = [{'date': s.created_at.strftime('%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in snaps]
+    history = [{'date': br_dt(s.created_at, '%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in snaps]
     return jsonify({'ok': True, 'username': username, 'history': history})
 
 @app.route('/api/monitor/remove/<username>', methods=['DELETE'])
@@ -1218,7 +1252,7 @@ def minha_conta():
                 unfollowers   = sorted(followers_prev - followers_now)
                 new_followers = sorted(followers_now  - followers_prev)
             history.append({
-                'date':          s.created_at.strftime('%d/%m/%Y %H:%M'),
+                'date':          br_dt(s.created_at),
                 'followers':     len(followers_now),
                 'following':     len(following_now),
                 'unfollowers':   unfollowers,
@@ -1229,7 +1263,7 @@ def minha_conta():
     monitored = []
     for mp in user.monitored_profiles.order_by(MonitoredProfile.created_at.desc()).all():
         snaps_mp = mp.snapshots.order_by(ProfileCountSnapshot.created_at.desc()).limit(30).all()
-        snap_history = [{'date': s.created_at.strftime('%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in reversed(snaps_mp)]
+        snap_history = [{'date': br_dt(s.created_at, '%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in reversed(snaps_mp)]
         latest_snap = snaps_mp[0] if snaps_mp else None
         prev_snap   = snaps_mp[1] if len(snaps_mp) > 1 else None
 
@@ -1245,7 +1279,7 @@ def minha_conta():
             lost   = sorted(prev - curr)
             if gained or lost:
                 follower_changes.append({
-                    'date':   fsnaps[i].created_at.strftime('%d/%m/%Y %H:%M'),
+                    'date':   br_dt(fsnaps[i].created_at),
                     'gained': gained,
                     'lost':   lost,
                 })
@@ -1256,7 +1290,7 @@ def minha_conta():
             'following':  latest_snap.following if latest_snap else 0,
             'is_private': latest_snap.is_private if latest_snap else False,
             'diff':       (latest_snap.followers - prev_snap.followers) if (latest_snap and prev_snap) else None,
-            'last_check': latest_snap.created_at.strftime('%d/%m %H:%M') if latest_snap else None,
+            'last_check': br_dt(latest_snap.created_at, '%d/%m %H:%M') if latest_snap else None,
             'history':    snap_history,
             'follower_changes': follower_changes,
             'has_follower_data': len(fsnaps) > 0,
