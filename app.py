@@ -1131,8 +1131,10 @@ def bem_vindo():
         return redirect(url_for('user_login'))
     return render_template('user/onboarding.html')
 
-@app.route('/bem-vindo/concluir', methods=['POST'])
+@app.route('/bem-vindo/concluir', methods=['GET', 'POST'])
 def bem_vindo_concluir():
+    # Aceita GET também: se o usuário recarrega a página (F5) ou abre o link direto,
+    # antes dava "Method Not Allowed" e travava o acesso ao painel. Agora só redireciona.
     session['onboarding_done'] = True
     return redirect(url_for('minha_conta'))
 
