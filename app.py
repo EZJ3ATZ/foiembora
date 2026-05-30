@@ -1197,6 +1197,74 @@ def spy_audit():
         'left': left,
     })
 
+
+@app.route('/api/spy/audit_debug')
+def spy_audit_debug():
+    """DIAGNÓSTICO (auth por sessão do site). Chama a HikerAPI DUAS vezes para o mesmo @
+    e mostra: contagem reportada, quanto cada chamada trouxe, e a diferença ENTRE as duas
+    chamadas. Se a HikerAPI for estável, call1 ≈ call2 e a diferença é ~0. Se ela devolver
+    listas incompletas que variam, a diferença explode — é a causa do 'tanto de seguidores'."""
+    user = _get_current_user()
+    if not user:
+        return Response('<h2>Faca login no painel primeiro: '
+                        '<a href="/entrar">/entrar</a></h2>', mimetype='text/html')
+    username = (request.args.get('username') or '').strip().lstrip('@').lower()
+    if not username:
+        return Response('<h2>Use ?username=perfil na URL</h2>', mimetype='text/html')
+
+    user_id, rep_count, is_private = _hiker_user_id(username)
+    if not user_id:
+        return Response(f'<h2>@{username}: HikerAPI nao resolveu o user_id. '
+                        f'Chave configurada? Perfil existe?</h2>', mimetype='text/html')
+
+    call1 = _hiker_followers(user_id)
+    call2 = _hiker_followers(user_id)
+    s1, s2 = set(call1), set(call2)
+    inter   = s1 & s2
+    only1   = s1 - s2
+    only2   = s2 - s1
+    union   = s1 | s2
+
+    def pct(n, d):
+        return f'{(100.0 * n / d):.1f}%' if d else '—'
+
+    rows = [
+        ('Seguidores reportados (perfil)', rep_count),
+        ('Chamada 1 — capturou', len(s1)),
+        ('Chamada 2 — capturou', len(s2)),
+        ('Em AMBAS (estável)', len(inter)),
+        ('Só na chamada 1', len(only1)),
+        ('Só na chamada 2', len(only2)),
+        ('União das duas', len(union)),
+        ('Estabilidade (ambas ÷ união)', pct(len(inter), len(union))),
+        ('Completude média vs reportado', pct((len(s1) + len(s2)) // 2, rep_count)),
+    ]
+    estavel = bool(union) and len(inter) >= len(union) * 0.97
+    veredito = (
+        '✅ HikerAPI ESTÁVEL — a lista é confiável, o "tanto de seguidores" não vem daqui.'
+        if estavel else
+        '🔴 HikerAPI INSTÁVEL — cada chamada traz gente diferente. É ISSO que gera os '
+        'seguidores fantasmas. A trava de 85% é frouxa demais; precisa exigir lista completa.'
+    )
+    color = 'green' if estavel else '#c0392b'
+
+    sample1 = ', '.join(list(only1)[:15]) or '—'
+    sample2 = ', '.join(list(only2)[:15]) or '—'
+    body = ''.join(f'<tr><td style="padding:6px 12px;border:1px solid #ccc">{k}</td>'
+                   f'<td style="padding:6px 12px;border:1px solid #ccc;font-weight:bold">{v}</td></tr>'
+                   for k, v in rows)
+    html = f"""<!doctype html><html><head><meta charset="utf-8">
+<title>Audit debug @{username}</title></head>
+<body style="font-family:system-ui;max-width:760px;margin:24px auto;padding:0 16px">
+<h2>Diagnóstico HikerAPI — @{username}</h2>
+<p style="font-size:18px;color:{color};font-weight:bold">{veredito}</p>
+<table style="border-collapse:collapse;margin:16px 0">{body}</table>
+<p><b>Só na chamada 1 (sumiram na 2):</b><br>{sample1}</p>
+<p><b>Só na chamada 2 (não tinham na 1):</b><br>{sample2}</p>
+</body></html>"""
+    return Response(html, mimetype='text/html')
+
+
 @app.route('/api/monitor/list')
 def monitor_list():
     """Retorna lista atualizada de perfis monitorados (usada pelo auto-refresh do dashboard)."""
