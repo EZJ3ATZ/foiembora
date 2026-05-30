@@ -1057,11 +1057,13 @@ def _fetch_ig_counts(username):
 
 
 def _hiker_user_id(username):
-    """Resolve o @ -> (user_id, follower_count, is_private) via HikerAPI.
-    Retorna (None, 0, False) se não achar/sem chave."""
+    """Resolve o @ -> (user_id, follower_count, is_private, err) via HikerAPI.
+    err: None se ok; 'sem_chave', 'sem_creditos' (402), 'rate' (429),
+    'http_<status>' ou 'excecao' se falhou. user_id=None quando err != None
+    ou perfil inexistente."""
     hiker_key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY')
     if not hiker_key:
-        return None, 0, False
+        return None, 0, False, 'sem_chave'
     username = (username or '').strip().lstrip('@').lower()
     try:
         r = req_lib.get(
@@ -1077,23 +1079,30 @@ def _hiker_user_id(username):
                 pk = u.get('pk') or u.get('pk_id') or u.get('id')
                 fc = u.get('follower_count') or 0
                 pv = bool(u.get('is_private', False))
-                return (str(pk) if pk else None), int(fc or 0), pv
-        else:
-            app.logger.warning(f'[hiker_user_id] {username}: status {r.status_code}')
+                return (str(pk) if pk else None), int(fc or 0), pv, None
+            return None, 0, False, None  # 200 mas sem user = perfil inexistente
+        app.logger.warning(f'[hiker_user_id] {username}: status {r.status_code}')
+        if r.status_code == 402:
+            return None, 0, False, 'sem_creditos'
+        if r.status_code == 429:
+            return None, 0, False, 'rate'
+        return None, 0, False, f'http_{r.status_code}'
     except Exception as e:
         app.logger.warning(f'[hiker_user_id] {username}: {e}')
-    return None, 0, False
+        return None, 0, False, 'excecao'
 
 
 def _hiker_followers(user_id, max_pages=80):
     """Lista COMPLETA de usernames de seguidores via HikerAPI v2 (paginado por page_id).
     O navegador trava em ~333 pra contas de terceiros; aqui no servidor não tem esse teto.
-    Retorna lista de usernames (lowercase). [] se falhar."""
+    Retorna (lista_usernames_lowercase, complete). complete=False se a paginação parou
+    por ERRO HTTP/exceção (lista truncada — NÃO confiar pra diff, vira fantasma)."""
     hiker_key = os.getenv('HIKERAPI_KEY') or Config.get('HIKERAPI_KEY')
     if not hiker_key:
-        return []
+        return [], False
     out, seen = [], set()
     page_id = None
+    complete = True
     for _ in range(max_pages):
         params = {'user_id': str(user_id)}
         if page_id:
@@ -1107,9 +1116,11 @@ def _hiker_followers(user_id, max_pages=80):
             )
         except Exception as e:
             app.logger.warning(f'[hiker_followers] {user_id}: {e}')
+            complete = False  # parou no meio por exceção -> lista truncada
             break
         if r.status_code != 200:
             app.logger.warning(f'[hiker_followers] {user_id}: status {r.status_code}')
+            complete = False  # 402 sem credito / 429 rate / etc -> lista truncada
             break
         d = r.json() or {}
         users = d.get('users')
@@ -1122,8 +1133,11 @@ def _hiker_followers(user_id, max_pages=80):
                 out.append(un)
         page_id = d.get('next_page_id') or (d.get('response') or {}).get('next_page_id')
         if not page_id:
-            break
-    return out
+            break  # fim natural da lista -> complete continua True
+    else:
+        # esgotou max_pages sem next=NAO -> pode ter mais; trata como incompleto
+        complete = False
+    return out, complete
 
 
 @app.route('/api/spy/audit', methods=['POST'])
@@ -1142,8 +1156,12 @@ def spy_audit():
     if not username:
         return jsonify({'ok': False, 'error': 'username é obrigatório'}), 400
 
-    user_id, rep_count, is_private = _hiker_user_id(username)
+    user_id, rep_count, is_private, err = _hiker_user_id(username)
     if not user_id:
+        if err in ('sem_creditos', 'rate', 'excecao') or (err and err.startswith('http_')):
+            return jsonify({'ok': False,
+                            'error': 'Serviço de auditoria temporariamente indisponível. '
+                                     'Tente novamente mais tarde.'}), 503
         return jsonify({'ok': False, 'error': 'Perfil não encontrado.'}), 404
     if is_private:
         return jsonify({'ok': False, 'error': 'Perfil privado — não é possível auditar seguidores.'}), 400
@@ -1154,11 +1172,17 @@ def spy_audit():
                         'error': f'Perfil grande demais para auditar a lista ({rep_count:,} seguidores). '
                                  f'Use o modo contagem para acompanhar este perfil.'.replace(',', '.')}), 400
 
-    followers = _hiker_followers(user_id)
+    followers, complete = _hiker_followers(user_id)
     n = len(set(followers))
     if n == 0:
         return jsonify({'ok': False, 'error': 'Não foi possível puxar a lista agora. Tente de novo em instantes.'}), 502
-    # Guarda: se a HikerAPI parou no meio, não compara (senão inventa fantasma).
+    # Guarda 1: paginação parou por ERRO HTTP (402 sem crédito / 429 rate / exceção).
+    # A lista está truncada por falha, NÃO por fim natural -> recusa (senão vira fantasma).
+    if not complete:
+        return jsonify({'ok': False,
+                        'error': 'Serviço de auditoria temporariamente indisponível. '
+                                 'Tente novamente mais tarde.'}), 503
+    # Guarda 2: lista veio completa mas curta demais vs o reportado -> ainda suspeita.
     if rep_count and n < rep_count * 0.85:
         return jsonify({'ok': False,
                         'error': f'Lista veio incompleta ({n} de ~{rep_count}). Tente de novo em instantes.'}), 502
