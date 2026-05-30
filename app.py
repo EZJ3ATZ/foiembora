@@ -1184,6 +1184,24 @@ def minha_conta():
         snap_history = [{'date': s.created_at.strftime('%d/%m %H:%M'), 'followers': s.followers, 'following': s.following} for s in reversed(snaps_mp)]
         latest_snap = snaps_mp[0] if snaps_mp else None
         prev_snap   = snaps_mp[1] if len(snaps_mp) > 1 else None
+
+        # Diff de QUEM entrou/saiu (lista completa de seguidores do perfil espionado)
+        fsnaps = SpyFollowerSnapshot.query.filter_by(
+            user_id=user.id, ig_username=mp.username.lower()
+        ).order_by(SpyFollowerSnapshot.created_at.desc()).limit(30).all()
+        follower_changes = []
+        for i in range(len(fsnaps) - 1):
+            curr = set(_json.loads(fsnaps[i].followers))
+            prev = set(_json.loads(fsnaps[i + 1].followers))
+            gained = sorted(curr - prev)
+            lost   = sorted(prev - curr)
+            if gained or lost:
+                follower_changes.append({
+                    'date':   fsnaps[i].created_at.strftime('%d/%m/%Y %H:%M'),
+                    'gained': gained,
+                    'lost':   lost,
+                })
+
         monitored.append({
             'username':   mp.username,
             'followers':  latest_snap.followers if latest_snap else 0,
@@ -1192,6 +1210,8 @@ def minha_conta():
             'diff':       (latest_snap.followers - prev_snap.followers) if (latest_snap and prev_snap) else None,
             'last_check': latest_snap.created_at.strftime('%d/%m %H:%M') if latest_snap else None,
             'history':    snap_history,
+            'follower_changes': follower_changes,
+            'has_follower_data': len(fsnaps) > 0,
         })
 
     sub = user.active_subscription

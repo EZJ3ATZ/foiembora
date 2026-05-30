@@ -76,6 +76,11 @@
     .limit-info{font-size:0.78rem;color:var(--dim);margin-bottom:1rem}
     .change-date{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;padding:0.7rem 0 0.3rem;border-top:1px solid var(--border);margin-top:0.4rem}
     .change-date:first-child{border-top:none;margin-top:0;padding-top:0.2rem}
+    .follower-changes{margin-top:0.85rem;border-top:1px solid var(--border);padding-top:0.85rem}
+    .fc-title{font-size:0.85rem;font-weight:700;margin-bottom:0.5rem}
+    .fc-hint{margin-top:0.85rem;border-top:1px solid var(--border);padding-top:0.85rem;font-size:0.78rem;color:var(--dim);line-height:1.5}
+    a.username{text-decoration:none;color:var(--text)}
+    a.username:hover{color:var(--purple)}
     @media(max-width:768px){
       .stats{grid-template-columns:1fr 1fr}.main-tabs{flex-direction:column}
       .spy-add{flex-direction:column;align-items:stretch}.btn-spy{width:100%;text-align:center}
@@ -202,6 +207,33 @@
             </tbody>
           </table>
         </div>
+        {% endif %}
+
+        {% if p.follower_changes %}
+        <div class="follower-changes">
+          <div class="fc-title">🔍 Quem entrou / saiu dos seguidores de @{{ p.username }}</div>
+          {% for c in p.follower_changes %}
+          <div class="change-date">📅 {{ c.date }}</div>
+          {% for u in c.gained %}
+          <div class="user-row">
+            <div class="avatar" style="background:linear-gradient(135deg,#22c55e,#16a34a)">{{ u[0] | upper }}</div>
+            <a class="username" href="https://www.instagram.com/{{ u }}/" target="_blank">@{{ u }}</a>
+            <div style="margin-left:auto"><span class="badge-green">novo seguidor</span></div>
+          </div>
+          {% endfor %}
+          {% for u in c.lost %}
+          <div class="user-row">
+            <div class="avatar" style="background:linear-gradient(135deg,#833ab4,#fd1d1d)">{{ u[0] | upper }}</div>
+            <a class="username" href="https://www.instagram.com/{{ u }}/" target="_blank">@{{ u }}</a>
+            <div style="margin-left:auto"><span class="badge-red">deixou de seguir</span></div>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        {% elif p.has_follower_data %}
+        <div class="fc-hint">✅ Lista de seguidores salva. Use <b>"Espionar seguidores"</b> na extensão de novo pra comparar e ver quem entrou/saiu.</div>
+        {% else %}
+        <div class="fc-hint">💡 Quer ver <b>quais</b> seguidores entraram/saíram (não só o número)? Na extensão, use o botão <b>"Espionar seguidores"</b> deste perfil.</div>
         {% endif %}
       </div>
       {% else %}
