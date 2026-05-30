@@ -708,10 +708,22 @@ def spy_follower_snapshot():
     prev_set = set(_json.loads(prev.followers)) if prev else set()
     curr_set = set(followers)
 
-    joined = list(curr_set - prev_set)   # chegaram
-    left   = list(prev_set - curr_set)   # saíram
+    # GUARDA ANTI-FANTASMA: se a lista anterior foi capturada truncada (ex: 331 de 502),
+    # comparar com a atual inventa "saíram/chegaram" que são só ruído. Se a contagem entre
+    # as duas capturas salta >15%, marca inconsistente e NÃO compara — salva a nova (boa)
+    # captura pra virar a base correta da próxima vez.
+    inconsistente = False
+    joined = []
+    left   = []
+    if prev:
+        a, b = len(curr_set), len(prev_set)
+        if max(a, b) > max(min(a, b), 1) * 1.15:
+            inconsistente = True
+        else:
+            joined = list(curr_set - prev_set)   # chegaram
+            left   = list(prev_set - curr_set)   # saíram
 
-    # Salva novo snapshot
+    # Salva novo snapshot (mesmo se inconsistente: substitui a base ruim pela boa)
     snap = SpyFollowerSnapshot(
         user_id=t.user_id,
         ig_username=username,
@@ -723,6 +735,7 @@ def spy_follower_snapshot():
     return jsonify({
         'ok': True,
         'is_new': prev is None,
+        'inconsistente': inconsistente,
         'total': len(curr_set),
         'prev_total': len(prev_set),
         'joined': joined,

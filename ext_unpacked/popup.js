@@ -513,11 +513,12 @@ chrome.runtime.onMessage.addListener((msg) => {
 
         $('spy-fl-status').style.display = 'none';
 
-        const total      = result?.total ?? (msg.followers?.length || 0);
-        const prev_total = result?.prev_total ?? 0;
-        const is_new     = result?.is_new ?? true;
-        const joined     = result?.joined ?? [];
-        const left       = result?.left ?? [];
+        const total         = result?.total ?? (msg.followers?.length || 0);
+        const prev_total    = result?.prev_total ?? 0;
+        const is_new        = result?.is_new ?? true;
+        const inconsistente = result?.inconsistente ?? false;
+        const joined        = result?.joined ?? [];
+        const left          = result?.left ?? [];
 
         $('spy-fl-left-count').textContent   = left.length;
         $('spy-fl-joined-count').textContent = joined.length;
@@ -525,7 +526,9 @@ chrome.runtime.onMessage.addListener((msg) => {
           ? 'Nao foi possivel salvar no servidor. Verifique sua conexao/login.'
           : is_new
             ? `Primeiro snapshot salvo com ${total.toLocaleString('pt-BR')} seguidores. Audite novamente para ver mudancas.`
-            : `Comparado com snapshot anterior (${prev_total.toLocaleString('pt-BR')} seguidores)`;
+            : inconsistente
+              ? `Captura anterior estava incompleta (${prev_total.toLocaleString('pt-BR')} vs ${total.toLocaleString('pt-BR')} agora). Base corrigida — audite de novo daqui a pouco para comparar com dados limpos.`
+              : `Comparado com snapshot anterior (${prev_total.toLocaleString('pt-BR')} seguidores)`;
 
         $('spy-fl-result').style.display = 'block';
 

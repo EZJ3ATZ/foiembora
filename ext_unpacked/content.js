@@ -191,6 +191,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const followerList = await paginate(`/api/v1/friendships/${info.user_id}/followers/`);
         const followerUsernames = followerList.map(u => u.username);
 
+        // GUARDA ANTI-LIXO (mesma do analyze): o Instagram às vezes devolve a lista
+        // truncada (ex: 331 de 502) ou inflada com contas sugeridas. Se a lista capturada
+        // não bater com a contagem real do perfil, recusa — senão salva snapshot podre e a
+        // auditoria inventa "saíram/chegaram" fantasma comparando lista incompleta.
+        const dedup = new Set(followerUsernames).size;
+        const rep   = info.followers;
+        if (rep && rep >= 1 && (dedup > rep * 1.15 || dedup < rep * 0.85)) {
+          throw new Error(
+            `Captura incompleta: o Instagram devolveu ${dedup} de ~${rep} seguidores. ` +
+            `Aguarde 30s e tente auditar de novo.`
+          );
+        }
+
         // POST de snapshot é feito pelo POPUP (origem da extensão fala com foiembora;
         // o content script em instagram.com é bloqueado no Orion). Mandamos a lista crua.
         chrome.runtime.sendMessage({
