@@ -20,17 +20,19 @@ function getHeaders() {
 async function getCurrentUser() {
   const dsUserId = getCookie('ds_user_id');
   if (dsUserId) {
-    let username = null;
+    let username = null, follower_count = null, following_count = null;
     try {
       const resp = await fetch(`/api/v1/users/${dsUserId}/info/`, {
         headers: getHeaders(), credentials: 'include'
       });
       if (resp.ok) {
         const data = await resp.json();
-        username = data.user?.username;
+        username       = data.user?.username;
+        follower_count  = data.user?.follower_count;
+        following_count = data.user?.following_count;
       }
     } catch (_) {}
-    return { id: dsUserId, username };
+    return { id: dsUserId, username, follower_count, following_count };
   }
 
   const resp = await fetch('/api/v1/accounts/current_user/?edit=true', {
@@ -39,7 +41,10 @@ async function getCurrentUser() {
   });
   if (!resp.ok) throw new Error('Voce precisa estar logado no Instagram nesta aba.');
   const data = await resp.json();
-  return { id: data.user?.pk, username: data.user?.username };
+  return {
+    id: data.user?.pk, username: data.user?.username,
+    follower_count: data.user?.follower_count, following_count: data.user?.following_count
+  };
 }
 
 async function paginate(url) {
@@ -217,6 +222,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         text: `Carregando seus seguidores... (voce segue ${following.length})`
       });
       const followers = await paginate(`/api/v1/friendships/${user.id}/followers/`);
+
+      // GUARDA ANTI-LIXO: o Instagram às vezes injeta contas SUGERIDAS/recomendadas na
+      // resposta, inflando a lista (ex: real 889, vem 1116). Se a lista capturada não
+      // bater com a contagem REAL do perfil, recusamos — senão salva lixo e o painel
+      // mostra "cacetada de gente" fantasma entrando/saindo.
+      const dedupF = new Set(followers.map(u => u.username)).size;
+      const dedupG = new Set(following.map(u => u.username)).size;
+      const repF = user.follower_count, repG = user.following_count;
+      function incompativel(captured, reported) {
+        if (!reported || reported < 1) return false;          // sem referência, não barra
+        return captured > reported * 1.15 || captured < reported * 0.5;
+      }
+      if (incompativel(dedupF, repF) || incompativel(dedupG, repG)) {
+        throw new Error(
+          `Captura inconsistente: o Instagram devolveu uma lista incompativel ` +
+          `(seguidores: esperado ~${repF}, veio ${dedupF}). ` +
+          `Isso acontece quando o Instagram mistura contas sugeridas. Aguarde 30s e tente de novo.`
+        );
+      }
 
       const followerIds = new Set(followers.map(u => u.pk));
       const notFollowingBack = following

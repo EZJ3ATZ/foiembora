@@ -333,8 +333,12 @@
             <td style="color:var(--muted)">{{ h.date }}</td>
             <td style="font-weight:700">{{ h.followers }}</td>
             <td>{{ h.following }}</td>
+            {% if h.inconsistente %}
+            <td colspan="2" style="color:var(--orange);font-size:0.78rem">⚠️ captura inconsistente — ignorada na comparação</td>
+            {% else %}
             <td style="color:var(--green)">{% if h.new_followers %}+{{ h.new_followers | length }}{% else %}—{% endif %}</td>
             <td style="color:var(--red)">{% if h.unfollowers %}-{{ h.unfollowers | length }}{% else %}—{% endif %}</td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>

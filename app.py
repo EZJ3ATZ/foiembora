@@ -788,12 +788,19 @@ def snapshot_save():
 
     unfollowers = []
     new_followers = []
+    inconsistente = False
 
     if prev:
         prev_followers = set(_json.loads(prev.followers))
         curr_followers = set(followers)
-        unfollowers    = list(prev_followers - curr_followers)   # pararam de seguir
-        new_followers  = list(curr_followers - prev_followers)   # começaram a seguir
+        # GUARDA: se a contagem saltou demais (>15%), captura anômala (sugeridos/extras
+        # ou truncada). Não comparamos pra não gerar unfollowers fantasma.
+        a, b = len(curr_followers), len(prev_followers)
+        if max(a, b) > max(min(a, b), 1) * 1.15:
+            inconsistente = True
+        else:
+            unfollowers    = list(prev_followers - curr_followers)   # pararam de seguir
+            new_followers  = list(curr_followers - prev_followers)   # começaram a seguir
         prev_date      = br_dt(prev.created_at, '%d/%m/%Y')
     else:
         prev_date = None
@@ -811,6 +818,7 @@ def snapshot_save():
         'ok': True,
         'unfollowers':    unfollowers,
         'new_followers':  new_followers,
+        'inconsistente':  inconsistente,
         'prev_date':      prev_date,
         'total_snapshots': t.snapshots.count()
     })
@@ -1246,17 +1254,26 @@ def minha_conta():
             followers_now = set(_json.loads(s.followers))
             following_now = set(_json.loads(s.following))
             unfollowers = new_followers = []
+            inconsistente = False
             if i < len(snaps) - 1:
                 prev = snaps[i + 1]
                 followers_prev = set(_json.loads(prev.followers))
-                unfollowers   = sorted(followers_prev - followers_now)
-                new_followers = sorted(followers_now  - followers_prev)
+                # GUARDA: se a contagem saltou demais (>15%), a captura é anômala
+                # (Instagram devolveu contas sugeridas/extras ou veio truncada).
+                # Não comparamos — senão aparece "cacetada de gente" fantasma.
+                a, b = len(followers_now), len(followers_prev)
+                if max(a, b) > max(min(a, b), 1) * 1.15:
+                    inconsistente = True
+                else:
+                    unfollowers   = sorted(followers_prev - followers_now)
+                    new_followers = sorted(followers_now  - followers_prev)
             history.append({
                 'date':          br_dt(s.created_at),
                 'followers':     len(followers_now),
                 'following':     len(following_now),
                 'unfollowers':   unfollowers,
                 'new_followers': new_followers,
+                'inconsistente': inconsistente,
             })
 
     # Perfis monitorados (spy feature)
