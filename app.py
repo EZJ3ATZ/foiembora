@@ -1205,6 +1205,16 @@ def spy_audit_debug():
     chamadas. Se a HikerAPI for estável, call1 ≈ call2 e a diferença é ~0. Se ela devolver
     listas incompletas que variam, a diferença explode — é a causa do 'tanto de seguidores'."""
     from flask import Response
+    import traceback as _tb
+    try:
+        return _spy_audit_debug_impl()
+    except Exception as e:
+        return Response('<pre style="white-space:pre-wrap;color:#c0392b">ERRO:\n'
+                        + str(e) + '\n\n' + _tb.format_exc() + '</pre>', mimetype='text/html')
+
+
+def _spy_audit_debug_impl():
+    from flask import Response
     user = _get_current_user()
     if not user:
         return Response('<h2>Faca login no painel primeiro: '
