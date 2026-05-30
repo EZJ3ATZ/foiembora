@@ -805,6 +805,54 @@ def snapshot_save():
         'total_snapshots': t.snapshots.count()
     })
 
+@app.route('/api/snapshot/debug')
+def snapshot_debug():
+    """DIAGNÓSTICO (somente leitura): inspeciona os snapshots do usuário logado para
+    descobrir de onde saem 'unfollowers' fantasma. Auth por sessão (igual minha-conta)."""
+    import json as _json
+    email = session.get('user_email')
+    if not email:
+        return jsonify({'error': 'login necessário'}), 401
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'usuário não encontrado'}), 404
+    t = user.tokens.order_by(AccessToken.created_at.desc()).first()
+    if not t:
+        return jsonify({'error': 'sem token'}), 404
+
+    # ordem cronológica (mais antigo -> mais novo)
+    snaps = list(reversed(t.snapshots.order_by(FollowerSnapshot.created_at.desc()).limit(15).all()))
+
+    out = []
+    for i, s in enumerate(snaps):
+        fol = set(_json.loads(s.followers))
+        flw = set(_json.loads(s.following))
+        row = {
+            'idx':          i,
+            'date':         s.created_at.strftime('%d/%m/%Y %H:%M'),
+            'n_followers':  len(fol),
+            'n_following':  len(flw),
+            'overlap_fol_flw': len(fol & flw),  # quantos seguidores você tbm segue
+        }
+        if i > 0:
+            prev = snaps[i - 1]
+            fol_prev = set(_json.loads(prev.followers))
+            flw_prev = set(_json.loads(prev.following))
+            unf = fol_prev - fol     # apareceriam como "parou de te seguir"
+            new = fol - fol_prev     # apareceriam como "novo seguidor"
+            row['vs_prev'] = {
+                'unfollowers':            len(unf),
+                'new_followers':          len(new),
+                # TESTE-CHAVE: dos "unfollowers", quantos são gente que você SEGUE
+                # (se for alto -> contaminação followers↔following, não unfollow real)
+                'unf_que_voce_segue_now':  len(unf & flw),
+                'unf_que_voce_segue_prev': len(unf & flw_prev),
+                'unf_sample':             sorted(list(unf))[:12],
+            }
+        out.append(row)
+
+    return jsonify({'ok': True, 'token_plan': t.plan, 'n_snapshots': t.snapshots.count(), 'snapshots': out})
+
 @app.route('/api/snapshot/history')
 def snapshot_history():
     """Retorna histórico de contagens de seguidores do token."""
